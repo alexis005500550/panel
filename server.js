@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════
-//  ProspectFlow — Proxy Gemini + Persistance disque + WhatsApp Auto
+//  index — Proxy Gemini + Persistance disque + WhatsApp Auto
 //  node server.js
 // ═══════════════════════════════════════════════════════════════════
 
@@ -232,7 +232,7 @@ const server = http.createServer(async (req, res) => {
 
   // HTML principal
   if (req.method === 'GET' && (url === '/' || url === '/index.html')) {
-    const f = path.join(__dirname, 'prospectflow.html');
+    const f = path.join(__dirname, 'index.html');
     if (!fs.existsSync(f)) { res.writeHead(404); res.end('<h2>prospectflow.html introuvable</h2>'); return; }
     res.writeHead(200, {'Content-Type':'text/html; charset=utf-8'});
     res.end(fs.readFileSync(f)); return;
@@ -333,7 +333,7 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, async () => {
   console.log('');
   console.log('  ╔══════════════════════════════════════════════════════════╗');
-  console.log('  ║   ProspectFlow — Gemini + Persistance + WhatsApp Auto   ║');
+  console.log('  ║   index — Gemini + Persistance + WhatsApp Auto   ║');
   console.log('  ╚══════════════════════════════════════════════════════════╝');
   console.log('');
   console.log('  👉  App     : http://localhost:' + PORT);

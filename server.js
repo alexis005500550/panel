@@ -9,7 +9,7 @@ const fs      = require('fs');
 const path    = require('path');
 
 const API_KEY  = process.env.GEMINI_API_KEY || 'AIzaSyCWjKF4T-3RnKbckdAQsIQ_1SlNu0eCpTQ';
-const PORT     = 3000;
+const PORT = process.env.PORT || 8080;
 const MODEL    = 'gemini-2.5-flash';
 const DATA_DIR = path.join(__dirname, 'data');
 const WA_DIR   = path.join(__dirname, 'wa_session');

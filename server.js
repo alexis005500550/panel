@@ -7,9 +7,12 @@ const http    = require('http');
 const https   = require('https');
 const fs      = require('fs');
 const path    = require('path');
+try { require('dotenv').config(); } catch(e) {}
 
-const API_KEY  = process.env.GEMINI_API_KEY || 'AIzaSyDAvXKInSq4XILYUkqEPWhnWuLvdYLqx4A';
-const PORT     = 8080;
+
+const API_KEY = process.env.GEMINI_API_KEY;
+if (!API_KEY) { console.error('❌ GEMINI_API_KEY manquante'); process.exit(1); }
+const PORT = process.env.PORT || 8080;
 const MODEL    = 'gemini-2.5-flash';
 const DATA_DIR = path.join(__dirname, 'data');
 const WA_DIR   = path.join(__dirname, 'wa_session');

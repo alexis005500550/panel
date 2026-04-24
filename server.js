@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════
-//  index — Proxy Gemini + Persistance disque + WhatsApp Auto
+//  ProspectFlow — Proxy Gemini + Persistance disque + WhatsApp Auto
 //  node server.js
 // ═══════════════════════════════════════════════════════════════════
 
@@ -8,8 +8,8 @@ const https   = require('https');
 const fs      = require('fs');
 const path    = require('path');
 
-const API_KEY  = process.env.GEMINI_API_KEY || 'AIzaSyCWjKF4T-3RnKbckdAQsIQ_1SlNu0eCpTQ';
-const PORT = process.env.PORT || 8080;
+const API_KEY  = process.env.GEMINI_API_KEY || 'AIzaSyDAvXKInSq4XILYUkqEPWhnWuLvdYLqx4A';
+const PORT     = 8080;
 const MODEL    = 'gemini-2.5-flash';
 const DATA_DIR = path.join(__dirname, 'data');
 const WA_DIR   = path.join(__dirname, 'wa_session');
@@ -157,7 +157,7 @@ function callGemini(payload) {
       res.on('end',()=>{ try{resolve({status:res.statusCode,body:JSON.parse(data)});}catch(e){reject(new Error('Parse:'+data.slice(0,200)));} });
     });
     req.on('error',reject);
-    req.setTimeout(120000,()=>{req.destroy();reject(new Error('Timeout 120s'));});
+    req.setTimeout(300000,()=>{req.destroy();reject(new Error('Timeout 300s'));});
     req.write(body); req.end();
   });
 }
@@ -233,7 +233,7 @@ const server = http.createServer(async (req, res) => {
   // HTML principal
   if (req.method === 'GET' && (url === '/' || url === '/index.html')) {
     const f = path.join(__dirname, 'index.html');
-    if (!fs.existsSync(f)) { res.writeHead(404); res.end('<h2>prospectflow.html introuvable</h2>'); return; }
+    if (!fs.existsSync(f)) { res.writeHead(404); res.end('<h2>index.html introuvable</h2>'); return; }
     res.writeHead(200, {'Content-Type':'text/html; charset=utf-8'});
     res.end(fs.readFileSync(f)); return;
   }
@@ -330,10 +330,12 @@ const server = http.createServer(async (req, res) => {
   res.writeHead(404); res.end('Not found');
 });
 
+server.timeout = 300000;
+
 server.listen(PORT, async () => {
   console.log('');
   console.log('  ╔══════════════════════════════════════════════════════════╗');
-  console.log('  ║   index — Gemini + Persistance + WhatsApp Auto   ║');
+  console.log('  ║   ProspectFlow — Gemini + Persistance + WhatsApp Auto   ║');
   console.log('  ╚══════════════════════════════════════════════════════════╝');
   console.log('');
   console.log('  👉  App     : http://localhost:' + PORT);

@@ -229,7 +229,7 @@ function qrPageHTML(qr, status) {
   .step{font-size:12px;color:#7a7670;text-align:left;line-height:2.2;background:#f8f7f4;border-radius:8px;padding:12px 16px;margin-top:12px}
   .green{color:#25D366;font-weight:600}
   </style></head>
-  
+
   <body><div class="b">
     <div style="font-size:40px">📱</div>
     <h2 style="margin:8px 0 4px;font-size:18px">Connecter WhatsApp</h2>
@@ -592,8 +592,12 @@ const raw = [
     const key = dbMatch[1];
     if (!DB_FILES[key]) { jsonResp(res, 404, { error:'Unknown key' }); return; }
     if (req.method === 'GET') { jsonResp(res, 200, { data:readDB(key) }); return; }
-    if (req.method === 'POST') {
-      try { const b = await parseBody(req); jsonResp(res, writeDB(key,b.data)?200:500, { ok:writeDB(key,b.data) }); }
+if (req.method === 'POST') {
+  try {
+    const b = await parseBody(req);
+    const ok = writeDB(key, b.data);
+    jsonResp(res, ok ? 200 : 500, { ok });
+  }
       catch(e) { jsonResp(res, 400, { error:e.message }); }
       return;
     }

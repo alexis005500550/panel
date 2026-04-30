@@ -1753,25 +1753,50 @@ function logActivity(msg,type='info'){activity.unshift({msg,type,ts:new Date().t
 // ══ AUTH ══
 function doLogin(){
   const login=document.getElementById('li-user').value.trim();
-  const pass=document.getElementById('li-pass').value;
-  console.log('Users chargés:', users.map(u=>u.login), '| Tentative:', login);
-  const u=users.find(u=>u.login===login&&u.pass===pass);
-  if(!u){document.getElementById('login-err').style.display='block';return;}
-  // Vérification abonnement (sauf superadmin)
-  if(u.role!=='superadmin'&&u.teamId){
-    const team=teams.find(t=>t.id===u.teamId);
-    if(team){
-      const sub=team.subscription||{};
-      if(sub.status!=='active'||(sub.expiresAt&&sub.expiresAt<today())){
-        document.getElementById('login-err').textContent='Votre abonnement est expiré ou inactif. Contactez l\'administrateur.';
-        document.getElementById('login-err').style.display='block';return;
+  const pass=document.getElementById('li-pass').value.trim();
+  document.getElementById('login-err').style.display='none';
+
+  fetch('/db/users')
+    .then(r=>r.json())
+    .then(j=>{
+      const userList = j.data || [];
+      const u = userList.find(x =>
+        (x.login||'').trim()===login && (x.pass||'').trim()===pass
+      );
+      if(!u){
+        document.getElementById('login-err').textContent='Identifiants incorrects. Veuillez réessayer.';
+        document.getElementById('login-err').style.display='block';
+        return;
       }
-    }
-  }
-  currentUser=u;sessionStorage.setItem(SK_SESSION,JSON.stringify(u));
-  document.getElementById('login-screen').style.display='none';
-  document.getElementById('main-app').style.display='flex';
-  initApp();
+      // Vérification abonnement
+      if(u.role!=='superadmin'&&u.teamId){
+        const team=(teams||[]).find(t=>t.id===u.teamId);
+        if(team){
+          const sub=team.subscription||{};
+          if(sub.status!=='active'||(sub.expiresAt&&sub.expiresAt<today())){
+            document.getElementById('login-err').textContent='Abonnement expiré. Contactez l\'administrateur.';
+            document.getElementById('login-err').style.display='block';
+            return;
+          }
+        }
+      }
+      // Mettre à jour users en mémoire avec la version fraîche
+      users = userList;
+      currentUser=u;
+      sessionStorage.setItem(SK_SESSION,JSON.stringify(u));
+      document.getElementById('login-screen').style.display='none';
+      document.getElementById('main-app').style.display='flex';
+      initApp();
+    })
+    .catch(()=>{
+      // Fallback sur users en mémoire si le serveur est injoignable
+      const u=users.find(x=>(x.login||'').trim()===login&&(x.pass||'').trim()===pass);
+      if(!u){document.getElementById('login-err').style.display='block';return;}
+      currentUser=u;sessionStorage.setItem(SK_SESSION,JSON.stringify(u));
+      document.getElementById('login-screen').style.display='none';
+      document.getElementById('main-app').style.display='flex';
+      initApp();
+    });
 }
 function doLogout(){
   sessionStorage.removeItem(SK_SESSION);currentUser=null;

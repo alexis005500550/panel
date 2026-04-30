@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>ProspectFlow CRM</title>
+<title>PushProspect CRM</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
@@ -458,6 +458,88 @@ a{color:inherit}
 .page-header{display:flex;align-items:center;gap:14px;margin-bottom:20px}
 .page-title{font-size:20px;font-weight:700;letter-spacing:-0.4px}
 .page-sub{font-size:12px;color:var(--text3);margin-top:2px}
+.msg-bot {
+  background: #fff;
+  border: 1px solid #E2E4EA;
+  border-radius: 12px 12px 12px 2px;
+  padding: 9px 12px;
+  font-size: 13px;
+  color: #0D0F14;
+  max-width: 85%;
+  align-self: flex-start;
+  line-height: 1.6;
+}
+.msg-user {
+  background: #1C54F0;
+  color: #fff;
+  border-radius: 12px 12px 2px 12px;
+  padding: 9px 12px;
+  font-size: 13px;
+  max-width: 85%;
+  align-self: flex-end;
+  line-height: 1.6;
+}
+@keyframes chat-pulse {
+  0%, 100% { box-shadow: 0 4px 16px rgba(28,84,240,0.4), 0 0 0 0 rgba(28,84,240,0.3); }
+  50% { box-shadow: 0 4px 16px rgba(28,84,240,0.4), 0 0 0 10px rgba(28,84,240,0); }
+}
+@keyframes bounce {
+  0%, 100% { transform: translateY(0);    opacity: 0.35; }
+  50%       { transform: translateY(-6px); opacity: 1;    }
+}
+@keyframes msg-in-user {
+  from { opacity: 0; transform: translateX(14px) scale(0.96); }
+  to   { opacity: 1; transform: translateX(0)    scale(1);    }
+}
+@keyframes msg-in-bot {
+  from { opacity: 0; transform: translateX(-14px) scale(0.96); }
+  to   { opacity: 1; transform: translateX(0)     scale(1);    }
+}
+.msg-bot {
+  background: #fff;
+  border: 1px solid #E2E4EA;
+  border-radius: 12px 12px 12px 2px;
+  padding: 9px 12px;
+  font-size: 13px;
+  color: #0D0F14;
+  max-width: 85%;
+  align-self: flex-start;
+  line-height: 1.6;
+  animation: msg-in-bot 0.3s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+.msg-user {
+  background: #1C54F0;
+  color: #fff;
+  border-radius: 12px 12px 2px 12px;
+  padding: 9px 12px;
+  font-size: 13px;
+  max-width: 85%;
+  align-self: flex-end;
+  line-height: 1.6;
+  animation: msg-in-user 0.3s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+.msg-typing {
+  background: #fff;
+  border: 1px solid #E2E4EA;
+  border-radius: 18px 18px 18px 4px;
+  padding: 10px 14px;
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  min-height: 38px;
+  gap: 2px;
+}
+.dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #8891A8;
+  animation: bounce 1.2s ease-in-out infinite;
+}
+.dot:nth-child(1) { animation-delay: 0s;   }
+.dot:nth-child(2) { animation-delay: 0.2s; }
+.dot:nth-child(3) { animation-delay: 0.4s; }
 </style>
 </head>
 <body>
@@ -466,7 +548,9 @@ a{color:inherit}
 <div class="login-screen" id="login-screen">
   <div class="login-bg"></div>
   <div class="login-card fi">
-    <div class="login-wordmark"><div class="login-wordmark-dot"></div>ProspectFlow</div>
+<div class="login-wordmark"><img src="logo.png" style="height:52px;object-fit:contain;filter:brightness(0) invert(1)"/></div>
+
+
     <div class="login-sub">Plateforme CRM — Accès réservé</div>
     <div class="login-err" id="login-err">Identifiants incorrects. Veuillez réessayer.</div>
     <label class="login-label">Identifiant</label>
@@ -474,7 +558,7 @@ a{color:inherit}
     <label class="login-label">Mot de passe</label>
     <input class="login-input" id="li-pass" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/>
     <button class="login-btn" onclick="doLogin()">Se connecter</button>
-    <div class="login-footer">ProspectFlow CRM &middot; Usage professionnel uniquement</div>
+    <div class="login-footer">PushProspect CRM</div>
   </div>
 </div>
 
@@ -525,8 +609,10 @@ a{color:inherit}
 <!-- SIDEBAR -->
 <div class="sidebar">
   <div class="sidebar-top">
-    <div class="wordmark"><div class="wordmark-dot"></div>ProspectFlow</div>
-    <div class="wordmark-ver">CRM v6 &middot; Professionnel</div>
+<div class="wordmark"><img src="logo.png" style="height:45px;object-fit:contain;filter:brightness(0) invert(1)"/></div>
+
+
+
   </div>
   <div class="user-row">
     <div class="user-av" id="sb-av">A</div>
@@ -548,6 +634,10 @@ a{color:inherit}
     <div class="nav-item" id="nav-rdv" onclick="switchView('rdv',this)">
       <span class="nav-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
       Rendez-vous<span class="nav-badge" id="nc-rdv">0</span>
+    </div>
+    <div class="nav-item" id="nav-emails" onclick="switchView('emails',this)">
+      <span class="nav-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
+      Emails<span class="nav-badge" id="nc-emails">0</span>
     </div>
     <div class="nav-item" id="nav-scanner" onclick="switchView('scanner',this)">
       <span class="nav-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></span>
@@ -689,6 +779,10 @@ a{color:inherit}
   </div>
 
   <!-- RDV VIEW -->
+  <!-- EMAIL VIEW -->
+  <div class="view-page" id="view-emails" style="display:none"></div>
+
+  <!-- RDV VIEW -->
   <div class="rdv-view" id="view-rdv">
     <div class="rdv-box">
       <div class="page-header">
@@ -716,7 +810,6 @@ a{color:inherit}
     <div class="scanner-box">
       <div class="scanner-title">Prospection automatisée</div>
       <div style="font-size:12px;color:var(--text3);margin-bottom:4px">Extraction en parallèle · Déduplication · Exclusion automatique des non-intéressés</div>
-      <div class="alert alert-info" style="margin-bottom:14px;font-size:12px">Ce scanner utilise le proxy Node.js local (server.js). Les contacts marqués "Non intéressés" sont automatiquement exclus des résultats.</div>
       <div class="form-grid">
         <div><label class="form-label">Secteur d'activité</label>
           <select class="form-input" id="scan-niche">
@@ -734,6 +827,11 @@ a{color:inherit}
             <option value="agence immobilière">Agence immobilière</option><option value="pizzeria">Pizzeria</option>
             <option value="auto-école">Auto-école</option>
 <option value="expert-comptable">Expert-comptable</option>
+<option value="institut de beauté">Institut de beauté</option>
+<option value="prothésiste ongulaire nail art">Prothésiste ongulaire / Nail art</option>
+<option value="centre esthétique épilation">Centre esthétique / Épilation</option>
+<option value="maquillage permanent tatouage sourcils">Maquillage permanent / Tatouage sourcils</option>
+<option value="microblading extensions cils">Microblading / Extensions de cils</option>
 <option disabled>── Indépendants ──</option>
 <option value="coach sportif personal trainer">Coach sportif / Personal trainer</option>
 <option value="coach de vie life coach">Coach de vie / Life coach</option>
@@ -806,41 +904,63 @@ a{color:inherit}
   </div>
 </div>
 </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:13px">
-  <div>
-    <label class="form-label">Préfixes blacklistés <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(séparer par virgule)</span></label>
-    <div style="display:flex;gap:6px;align-items:center">
-      <input class="form-input" id="blacklist-prefixes" placeholder="01, 04, 08…" style="flex:1"/>
-      <button class="btn" id="blacklist-toggle" onclick="toggleBlacklist(this)" style="white-space:nowrap;flex-shrink:0">Inactif</button>
-    </div>
-    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px" id="blacklist-chips"></div>
-  </div>
-  <div>
-    <label class="form-label">Filtre numéro</label>
-    <button class="btn" id="phone-only-toggle" onclick="togglePhoneOnly(this)" style="width:100%;justify-content:center;padding:8px">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.99 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.9 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 5.9 5.9l1.09-1.16a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-      Avec numéro uniquement — Inactif
-    </button>
-  </div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:13px">
+<div>
+<label class="form-label">Préfixes blacklistés <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(séparer par virgule)</span></label>
+<div style="display:flex;gap:6px;align-items:center">
+<input class="form-input" id="blacklist-prefixes" placeholder="01, 04, 08…" style="flex:1"/>
+<button class="btn" id="blacklist-toggle" onclick="toggleBlacklist(this)" style="white-space:nowrap;flex-shrink:0">Inactif</button>
 </div>
-<div style="display:flex;gap:7px;margin-bottom:7px">
-        <button class="btn btn-primary" style="flex:1;justify-content:center" id="scan-btn" onclick="scanWithAI()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px" id="blacklist-chips"></div>
+</div>
+<div>
+<label class="form-label">Filtre numéro</label>
+<button class="btn" id="phone-only-toggle" onclick="togglePhoneOnly(this)" style="width:100%;justify-content:center;padding:8px">
+<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.99 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.9 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 5.9 5.9l1.09-1.16a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      Avec numéro uniquement — Inactif
+</button>
+</div>
+<div>
+<label class="form-label">Filtre email</label>
+<button class="btn" id="email-only-toggle" onclick="toggleEmailOnly(this)" style="width:100%;justify-content:center;padding:8px">
+<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      Avec email uniquement — Inactif
+</button>
+</div>
+<div>
+<label class="form-label">Filtre site web</label>
+<button class="btn" id="nosite-only-toggle" onclick="toggleNoSiteOnly(this)" style="width:100%;justify-content:center;padding:8px">
+<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><line x1="4.22" y1="4.22" x2="19.78" y2="19.78"/></svg>
+  Sans site web uniquement — Inactif
+</button>
+</div>
+</div>
+<div style="display:flex;gap:7px;margin-bottom:7px;flex-wrap:wrap">
+<button class="btn btn-primary" style="flex:1;justify-content:center" id="scan-btn" onclick="scanWithAI()">
+<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
           Lancer le scan
-        </button>
-        <button class="btn btn-teal" id="btn-add-all" style="display:none" onclick="addAllResults()">Tout ajouter (<span id="add-all-count">0</span>)</button>
-        <button class="btn btn-danger" id="btn-stop" style="display:none" onclick="stopScan()">Arrêter</button>
-      </div>
-      <div id="src-status-row" style="display:none;flex-wrap:wrap;gap:3px;margin-bottom:7px"></div>
-      <div class="scan-progress" id="scan-progress">
-        <div class="prog-track"><div class="prog-track-fill" id="scan-prog-fill" style="width:0%"></div></div>
-        <div style="font-size:11px;color:var(--text3);margin-top:4px" id="scan-prog-label">Initialisation…</div>
-      </div>
-      <div class="scan-log" id="scan-log"></div>
-      <div id="scan-alert" style="margin-top:7px"></div>
-      <div class="results-list" id="results-list" style="margin-top:10px"></div>
-    </div>
-  </div>
+</button>
+<button class="btn btn-teal" id="btn-add-all" style="display:none" onclick="addAllResults()">Tout ajouter (<span id="add-all-count">0</span>)</button>
+<button class="btn" id="btn-email-all" style="display:none;background:var(--amber-lt);color:var(--amber);border-color:rgba(217,119,6,0.2)" onclick="openEmailBlastModal()">
+<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          Emails (<span id="email-count">0</span>)
+</button>
+<button class="btn btn-danger" id="btn-stop" style="display:none" onclick="stopScan()">Arrêter</button>
+<button class="btn" id="btn-exclude-emailed" onclick="excludeAlreadyEmailed()" title="Masque les résultats dont l'email a déjà été envoyé" style="background:var(--amber-lt);color:var(--amber);border-color:rgba(217,119,6,0.2)">
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+  Exclure déjà contactés
+</button>
+</div>
+<div id="src-status-row" style="display:none;flex-wrap:wrap;gap:3px;margin-bottom:7px"></div>
+<div class="scan-progress" id="scan-progress">
+<div class="prog-track"><div class="prog-track-fill" id="scan-prog-fill" style="width:0%"></div></div>
+<div style="font-size:11px;color:var(--text3);margin-top:4px" id="scan-prog-label">Initialisation…</div>
+</div>
+<div class="scan-log" id="scan-log"></div>
+<div id="scan-alert" style="margin-top:7px"></div>
+<div class="results-list" id="results-list" style="margin-top:10px"></div>
+</div>
+</div>
 
   <!-- PIPELINE VIEW -->
   <div class="pipeline-view" id="view-pipeline"></div>
@@ -915,7 +1035,6 @@ a{color:inherit}
           Ajouter
         </button>
       </div>
-      <div class="alert alert-info" style="margin-bottom:14px;font-size:12px">Le <strong>Setter</strong> accède aux contacts et à l'agenda. Le <strong>Closer</strong> reçoit les RDV qualifiés et gère le pipeline de closing.</div>
       <div id="users-list"></div>
     </div>
   </div>
@@ -941,7 +1060,12 @@ a{color:inherit}
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:11px">
       <div><label class="form-label">Secteur</label>
-        <select class="form-input" id="f-niche"><option>Restaurant</option><option>Restauration rapide</option><option>Boulangerie</option><option>Coiffure</option><option>Artisan / BTP</option><option>Commerce</option><option>Santé</option><option>Auto / Garage</option><option>Hôtel</option><option disabled>── Indépendants ──</option>
+        <select class="form-input" id="f-niche"><option>Restaurant</option><option>Restauration rapide</option><option>Boulangerie</option><option>Coiffure</option><option>Artisan / BTP</option><option>Commerce</option><option>Santé</option><option>Auto / Garage</option><option>Hôtel</option>
+<option>Institut de beauté</option>
+<option>Prothésiste ongulaire / Nail art</option>
+<option>Esthétique / Épilation</option>
+<option>Maquillage permanent</option>
+<option disabled>── Indépendants ──</option>
 <option>Coach sportif</option>
 <option>Coach de vie</option>
 <option>Nutritionniste</option>
@@ -1098,9 +1222,11 @@ const SK_SESSION='pf6_session';
 const SK_ACTIVITY='pf6_activity';
 const SK_MESSAGES='pf6_messages';
 const SK_RDV='pf6_rdv';
+const SK_TEAMS='pf6_teams';
+const SK_EMAILS='pf6_emails';
 
 // ══ STATE ══
-let contacts=[],users=[],agenda=[],blocked=[],activity=[],messages=[],rdvList=[];
+let contacts=[],users=[],agenda=[],blocked=[],activity=[],messages=[],rdvList=[],teams=[],sentEmails=[];
 let currentUser=null,selectedId=null,currentNicheFilter='all',currentTagFilter=null;
 let editingId=null,selectedTags=[];
 let scanResults=[],targetBatch=10,scanAborted=false;
@@ -1123,6 +1249,20 @@ function renderBlacklistChips(){
   const el=document.getElementById('blacklist-chips');
   el.innerHTML=prefixes.map(p=>`<span class="pill" style="background:var(--red-lt);color:var(--red);font-size:11px">${p}…</span>`).join('');
 }
+
+let emailOnlyActive=false;
+let noSiteOnlyActive=false;
+function toggleNoSiteOnly(btn){
+  noSiteOnlyActive=!noSiteOnlyActive;
+  btn.innerHTML=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><line x1="4.22" y1="4.22" x2="19.78" y2="19.78"/></svg> Sans site web uniquement — ${noSiteOnlyActive?'Actif':'Inactif'}`;
+  btn.style.cssText=noSiteOnlyActive?'width:100%;justify-content:center;padding:8px;background:var(--purple-lt)!important;color:var(--purple)!important;border-color:rgba(124,58,237,0.25)!important':'width:100%;justify-content:center;padding:8px';
+}
+function toggleEmailOnly(btn){
+  emailOnlyActive=!emailOnlyActive;
+  btn.innerHTML=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Avec email uniquement — ${emailOnlyActive?'Actif':'Inactif'}`;
+  btn.style.cssText=emailOnlyActive?'width:100%;justify-content:center;padding:8px;background:var(--teal-lt)!important;color:var(--teal)!important;border-color:rgba(8,145,178,0.25)!important':'width:100%;justify-content:center;padding:8px';
+}
+
 function togglePhoneOnly(btn){
   phoneOnlyActive=!phoneOnlyActive;
   btn.innerHTML=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.99 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.9 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 5.9 5.9l1.09-1.16a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg> Avec numéro uniquement — ${phoneOnlyActive?'Actif':'Inactif'}`;
@@ -1281,6 +1421,17 @@ function selectWaTemplate(id){
   if(tpl)document.getElementById('wa-preview').value=tpl.text(waCurrentContact);
   document.querySelectorAll('[id^="watpl-"]').forEach(el=>{el.classList.toggle('selected',el.id==='watpl-'+id);});
 }
+
+async function checkGmailStatus(){
+  try{
+    const s=await fetch('/gmail/status').then(r=>r.json());
+    const dot=document.getElementById('gmail-status-dot');
+    const lbl=document.getElementById('gmail-status-lbl');
+    if(dot) dot.style.background=s.connected?'var(--green)':'var(--text3)';
+    if(lbl) lbl.textContent=s.connected?`Gmail connecté${s.email?' · '+s.email:''}` :'Gmail non connecté — cliquez sur "Connecter Gmail"';
+  }catch(e){}
+}
+// Appeler au chargement et quand on ouvre le modal
 async function sendWhatsApp(){
   const c=waCurrentContact;if(!c||!c.phone)return;
   const msg=document.getElementById('wa-preview').value.trim();
@@ -1341,23 +1492,39 @@ function _lsSet(key,data){try{localStorage.setItem(key,JSON.stringify(data));}ca
 async function load(){
   const serverOk=await checkServerAlive().catch(()=>false);
   if(serverOk){
-    const[c,u,ag,bl,act,msg,rdv]=await Promise.all([serverLoad('contacts'),serverLoad('users'),serverLoad('agenda'),serverLoad('blocked'),serverLoad('activity'),serverLoad('messages'),serverLoad('rdv')]);
-    contacts=c||JSON.parse(localStorage.getItem(SK_CONTACTS)||'[]');
-    agenda=ag||JSON.parse(localStorage.getItem(SK_AGENDA)||'[]');
-    blocked=bl||JSON.parse(localStorage.getItem(SK_BLOCKED)||'[]');
-    activity=act||JSON.parse(localStorage.getItem(SK_ACTIVITY)||'[]');
-    messages=msg||JSON.parse(localStorage.getItem(SK_MESSAGES)||'[]');
-    rdvList=rdv||JSON.parse(localStorage.getItem(SK_RDV)||'[]');
-    const uDef=[{id:'admin',login:'admin',name:'Admin',pass:'admin123',role:'admin',created:today()}];
-    users=u&&u.length?u:JSON.parse(localStorage.getItem(SK_USERS)||JSON.stringify(uDef));
+    const[c,u,ag,bl,act,msg,rdv,tm,se]=await Promise.all([
+      serverLoad('contacts'),serverLoad('users'),serverLoad('agenda'),serverLoad('blocked'),
+      serverLoad('activity'),serverLoad('messages'),serverLoad('rdv'),serverLoad('teams'),
+      serverLoad('emails')
+    ]);
+const defaultSuperAdmin = [{id:'superadmin',login:'superadmin',name:'Super Admin',pass:'superadmin123',role:'superadmin',teamId:null,created:today()}];
+if (!u || !Array.isArray(u) || u.length === 0) {
+  users = defaultSuperAdmin;
+} else {
+  const hasSuperAdmin = u.some(x => x.role === 'superadmin');
+  users = hasSuperAdmin ? u : [...defaultSuperAdmin, ...u];
+}
+    teams=tm||[];
+    sentEmails=se||[];
+
+    // Filtrage par équipe après login — les données brutes sont chargées en entier
+    // Le filtrage se fait côté JS dans getFiltered() etc.
+    contacts=c||[];
+    agenda=ag||[];
+    blocked=bl||[];
+    activity=act||[];
+    messages=msg||[];
+    rdvList=rdv||[];
     return;
   }
-  ['contacts','users','agenda','blocked','activity','messages','rdv'].forEach(k=>{
+  ['contacts','users','agenda','blocked','activity','messages','rdv','teams'].forEach(k=>{
     try{
       const v=JSON.parse(localStorage.getItem('pf6_'+k)||'[]');
-      if(k==='contacts')contacts=v;else if(k==='users')users=v.length?v:[{id:'admin',login:'admin',name:'Admin',pass:'admin123',role:'admin',created:today()}];
+      if(k==='contacts')contacts=v;
+      else if(k==='users')users=v.length?v:[{id:'superadmin',login:'superadmin',name:'Super Admin',pass:'superadmin123',role:'superadmin',teamId:null,created:today()}];
       else if(k==='agenda')agenda=v;else if(k==='blocked')blocked=v;
-      else if(k==='activity')activity=v;else if(k==='messages')messages=v;else if(k==='rdv')rdvList=v;
+      else if(k==='activity')activity=v;else if(k==='messages')messages=v;
+      else if(k==='rdv')rdvList=v;else if(k==='teams')teams=v;
     }catch(e){}
   });
 }
@@ -1366,6 +1533,220 @@ function saveUsers(){_lsSet(SK_USERS,users);serverSave('users',users);}
 function saveAgenda(){_lsSet(SK_AGENDA,agenda);serverSave('agenda',agenda);}
 function saveBlocked(){_lsSet(SK_BLOCKED,blocked);serverSave('blocked',blocked);}
 function saveMessages(){_lsSet(SK_MESSAGES,messages);serverSave('messages',messages);}
+
+// ══ EMAIL TRACKING ══
+function recordSentEmail(contact,subject,method){
+  const entry={
+    id:Date.now()+Math.random(),
+    contactId:contact.id||null,
+    biz:contact.biz||'—',
+    email:contact.email||'—',
+    ville:contact.ville||'',
+    niche:contact.niche||'',
+    dirigeant:contact.dirigeant||null,
+    subject,
+    method,
+    sentAt:new Date().toISOString(),
+    sentDate:today(),
+    sentBy:currentUser?.name||'?',
+    status:'sent',
+    relances:[]
+  };
+  sentEmails.unshift(entry);
+  if(sentEmails.length>2000)sentEmails=sentEmails.slice(0,2000);
+  saveSentEmails();
+  updateStats();
+}
+
+function isAlreadyEmailed(r){
+  const email=(r.email||'').toLowerCase().trim();
+  const biz=(r.biz||'').toLowerCase().trim();
+  if(!email&&!biz)return false;
+  return sentEmails.some(e=>{
+    if(email&&e.email&&e.email.toLowerCase()===email)return true;
+    if(biz&&e.biz&&e.biz.toLowerCase()===biz)return true;
+    return false;
+  });
+}
+
+function renderEmailView(){
+  const total=sentEmails.length;
+  const today7=new Date();today7.setDate(today7.getDate()-7);
+  const last7=sentEmails.filter(e=>e.sentDate>=today7.toISOString().split('T')[0]).length;
+  const relanceTotal=sentEmails.reduce((acc,e)=>acc+(e.relances||[]).length,0);
+  const q=(document.getElementById('email-search')?.value||'').toLowerCase();
+  const list=sentEmails.filter(e=>!q||`${e.biz} ${e.email} ${e.ville} ${e.niche}`.toLowerCase().includes(q));
+
+  const el=document.getElementById('view-emails');
+  el.innerHTML=`
+    <div style="max-width:1020px;margin:0 auto">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Emails envoyés</div>
+          <div class="page-sub">Suivi des campagnes email et relances</div>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:7px;align-items:center">
+          <button class="btn btn-warn" onclick="openRelanceAllModal()" ${!total?'disabled':''}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            Relancer tous (${total})
+          </button>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px">
+        <div class="stat-card"><div class="stat-card-val" style="color:var(--blue)">${total}</div><div class="stat-card-lbl">Emails envoyés total</div></div>
+        <div class="stat-card"><div class="stat-card-val" style="color:var(--teal)">${last7}</div><div class="stat-card-lbl">Envoyés (7 jours)</div></div>
+        <div class="stat-card"><div class="stat-card-val" style="color:var(--amber)">${relanceTotal}</div><div class="stat-card-lbl">Relances effectuées</div></div>
+        <div class="stat-card"><div class="stat-card-val" style="color:var(--green)">${new Set(sentEmails.map(e=>e.email)).size}</div><div class="stat-card-lbl">Contacts uniques</div></div>
+      </div>
+
+      <div class="search-wrap" style="max-width:100%;margin-bottom:12px">
+        <span class="search-ic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+        <input class="search-input" id="email-search" placeholder="Rechercher par entreprise, email, ville…" oninput="renderEmailView()" style="width:100%"/>
+      </div>
+
+      ${!list.length?`<div style="text-align:center;padding:48px;color:var(--text3);font-size:13px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg)">
+        <div style="font-size:32px;margin-bottom:10px;opacity:.2">✉</div>
+        Aucun email envoyé pour l'instant.<br>Utilisez le scanner pour prospecter, puis l'envoi groupé.
+      </div>`:list.map(e=>{
+        const av=avc(e.biz||'');
+        const relCount=(e.relances||[]).length;
+        return`<div class="rdv-card fi" style="margin-bottom:8px">
+          <div class="cav" style="width:36px;height:36px;font-size:12px;background:${av.bg};color:${av.txt};flex-shrink:0">${(e.biz||'?')[0].toUpperCase()}</div>
+          <div class="rdv-meta" style="flex:1">
+            <div class="rdv-title">${e.biz}</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:4px">
+              <span style="font-size:12px;color:var(--blue)">${e.email}</span>
+              ${e.ville?`<span style="font-size:12px;color:var(--text3)">${e.ville}</span>`:''}
+              ${e.niche?`<span class="pill" style="background:var(--surface);color:var(--text3);border:1px solid var(--border);font-size:10px">${e.niche}</span>`:''}
+              <span class="rdv-badge rdv-done">Envoyé le ${e.sentDate}</span>
+              ${relCount>0?`<span class="rdv-badge rdv-pending">${relCount} relance${relCount>1?'s':''}</span>`:''}
+            </div>
+            ${e.subject?`<div style="font-size:12px;color:var(--text3);margin-top:4px">Objet : ${e.subject}</div>`:''}
+            ${(e.relances||[]).length?`<div style="margin-top:6px;padding:6px 10px;background:var(--surface);border-radius:var(--radius);border-left:2px solid var(--amber)">
+              ${e.relances.map(r=>`<div style="font-size:11.5px;color:var(--text3)">↳ Relance le ${r.date} — ${r.subject||'Relance'}</div>`).join('')}
+            </div>`:''}
+          </div>
+          <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
+            <button class="btn btn-sm btn-warn" onclick="openRelanceModal('${e.id}')">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              Relancer
+            </button>
+            <button class="btn btn-sm btn-danger" onclick="deleteSentEmail('${e.id}')">Supprimer</button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function deleteSentEmail(id){
+  showConfirm('Supprimer cet enregistrement','Supprimer cet email du suivi ?','Supprimer','btn-danger',()=>{
+    sentEmails=sentEmails.filter(e=>String(e.id)!==String(id));
+    saveSentEmails();renderEmailView();updateStats();
+  });
+}
+
+// ── Modal relance individuelle ──
+let _relanceEmailId=null;
+function openRelanceModal(id){
+  _relanceEmailId=id;
+  const e=sentEmails.find(x=>String(x.id)===String(id));if(!e)return;
+  document.getElementById('relance-modal-info').innerHTML=
+    `<strong>${e.biz}</strong> &middot; <span style="color:var(--blue)">${e.email}</span>${e.ville?' &middot; '+e.ville:''}`;
+  document.getElementById('relance-subject').value=`Relance — ${e.biz}`;
+  const body=`Bonjour,
+
+Je me permets de revenir vers vous suite à mon message précédent concernant ${e.biz}.
+
+Avez-vous eu l'occasion de le lire ? Je reste disponible pour échanger quelques minutes si vous le souhaitez.
+
+Cordialement,
+[Votre prénom]`;
+  document.getElementById('relance-body').value=body;
+  document.getElementById('relance-modal').classList.add('show');
+}
+
+async function sendRelance(){
+  const e=sentEmails.find(x=>String(x.id)===String(_relanceEmailId));if(!e)return;
+  const subject=document.getElementById('relance-subject').value.trim();
+  const body=document.getElementById('relance-body').value.trim();
+  if(!subject||!body){showToast('Objet et message requis',false);return;}
+  try{
+    const resp=await fetch('/gmail/send',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({to:e.email,subject,body:resolveTemplate(body,e,true)})
+    });
+    if(resp.ok){
+      if(!e.relances)e.relances=[];
+      e.relances.push({date:today(),subject,sentAt:new Date().toISOString()});
+      saveSentEmails();closeModals();renderEmailView();
+      showToast(`Relance envoyée à ${e.biz}`,true);
+      logActivity(`Relance email : ${e.biz}`,'info');
+    }else{showToast('Échec envoi relance',false);}
+  }catch(err){showToast('Erreur : '+err.message,false);}
+}
+
+// ── Modal relance globale ──
+function openRelanceAllModal(){
+  const subject=`Relance — nous n'avons pas encore eu l'occasion d'échanger`;
+  const body=`Bonjour,
+
+Je me permets de revenir vers vous suite à mon précédent message.
+
+Je travaille avec des entreprises comme {nom} pour développer leur visibilité en ligne, et je pense que je pourrais vous apporter une vraie valeur ajoutée.
+
+Seriez-vous disponible pour un échange rapide de 10 minutes cette semaine ?
+
+Cordialement,
+[Votre prénom]`;
+  document.getElementById('relance-all-count').textContent=sentEmails.length;
+  document.getElementById('relance-all-subject').value=subject;
+  document.getElementById('relance-all-body').value=body;
+  document.getElementById('relance-all-modal').classList.add('show');
+}
+
+let _relanceAllIndex=0;
+let _relanceAllList=[];
+async function startRelanceAll(){
+  const subject=document.getElementById('relance-all-subject').value.trim();
+  const body=document.getElementById('relance-all-body').value.trim();
+  if(!subject||!body){showToast('Objet et message requis',false);return;}
+  _relanceAllList=[...sentEmails.filter(e=>e.email&&e.email.includes('@'))];
+  _relanceAllIndex=0;
+  closeModals();
+  await sendNextRelance(subject,body);
+}
+
+async function sendNextRelance(subject,body){
+  if(_relanceAllIndex>=_relanceAllList.length){
+    showToast(`Toutes les relances envoyées (${_relanceAllList.length})`,true);return;
+  }
+  const e=_relanceAllList[_relanceAllIndex];
+  try{
+    const resolvedSubject=resolveSubject(subject,e);
+    const resp=await fetch('/gmail/send',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({to:e.email,subject:resolvedSubject,body:resolveTemplate(body,{biz:e.biz,ville:e.ville,dirigeant:e.dirigeant},true)})
+    });
+    if(resp.ok){
+      const original=sentEmails.find(x=>String(x.id)===String(e.id));
+      if(original){if(!original.relances)original.relances=[];original.relances.push({date:today(),subject:resolvedSubject,sentAt:new Date().toISOString()});}
+      saveSentEmails();
+      showToast(`↳ Relance ${_relanceAllIndex+1}/${_relanceAllList.length} — ${e.biz}`,true);
+    }else showToast(`✗ Échec pour ${e.biz}`,false);
+  }catch(err){showToast(`✗ Erreur : ${err.message}`,false);}
+  _relanceAllIndex++;
+  if(_relanceAllIndex<_relanceAllList.length){
+    const wait=45000+Math.random()*45000;
+    showToast(`Prochain envoi dans ${Math.round(wait/1000)}s…`,true);
+    await new Promise(r=>setTimeout(r,wait));
+    await sendNextRelance(subject,body);
+  }else{
+    showToast(`Relances terminées — ${_relanceAllList.length} envoyées`,true);
+    renderEmailView();
+  }
+}
+function saveSentEmails(){_lsSet(SK_EMAILS,sentEmails);serverSave('emails',sentEmails);}
 function saveActivity(){const sl=activity.slice(0,200);_lsSet(SK_ACTIVITY,sl);serverSave('activity',sl);}
 function logActivity(msg,type='info'){activity.unshift({msg,type,ts:new Date().toLocaleString('fr-FR'),user:currentUser?.name||'?'});saveActivity();}
 
@@ -1373,8 +1754,20 @@ function logActivity(msg,type='info'){activity.unshift({msg,type,ts:new Date().t
 function doLogin(){
   const login=document.getElementById('li-user').value.trim();
   const pass=document.getElementById('li-pass').value;
+  console.log('Users chargés:', users.map(u=>u.login), '| Tentative:', login);
   const u=users.find(u=>u.login===login&&u.pass===pass);
   if(!u){document.getElementById('login-err').style.display='block';return;}
+  // Vérification abonnement (sauf superadmin)
+  if(u.role!=='superadmin'&&u.teamId){
+    const team=teams.find(t=>t.id===u.teamId);
+    if(team){
+      const sub=team.subscription||{};
+      if(sub.status!=='active'||(sub.expiresAt&&sub.expiresAt<today())){
+        document.getElementById('login-err').textContent='Votre abonnement est expiré ou inactif. Contactez l\'administrateur.';
+        document.getElementById('login-err').style.display='block';return;
+      }
+    }
+  }
   currentUser=u;sessionStorage.setItem(SK_SESSION,JSON.stringify(u));
   document.getElementById('login-screen').style.display='none';
   document.getElementById('main-app').style.display='flex';
@@ -1393,7 +1786,13 @@ function initApp(){
   document.getElementById('sb-name').textContent=currentUser.name||currentUser.login;
   const roleLabels={admin:'Administrateur',setter:'Setter',closer:'Closer',user:'Utilisateur'};
   document.getElementById('sb-role').textContent=roleLabels[currentUser.role]||'Utilisateur';
-  document.querySelectorAll('.admin-only').forEach(el=>el.style.display=currentUser.role==='admin'?'':'none');
+  document.querySelectorAll('.admin-only').forEach(el=>el.style.display=(currentUser.role==='admin'||currentUser.role==='superadmin')?'':'none');
+  // Le superadmin voit "Équipes" à la place de "Utilisateurs"
+  const navUsersLabel=document.querySelector('#nav-users .nav-ic + span')||document.getElementById('nav-users');
+  if(navUsersLabel&&isSuperAdmin()){
+    // Changer le libellé dans la nav
+    document.getElementById('nav-users').innerHTML=document.getElementById('nav-users').innerHTML.replace('Utilisateurs','Équipes');
+  }
   if(currentUser.role==='closer')switchView('rdv',document.getElementById('nav-rdv'));
   renderAll();checkWAStatus();
 }
@@ -1569,8 +1968,267 @@ function setProgress(pct,label){
 function stopScan(){
   scanAborted=true;document.getElementById('btn-stop').style.display='none';
   const btn=document.getElementById('scan-btn');btn.disabled=false;btn.textContent='Lancer le scan';
-  if(scanResults.length){document.getElementById('btn-add-all').style.display='inline-flex';document.getElementById('add-all-count').textContent=scanResults.length;}
+  if(scanResults.length){
+  document.getElementById('btn-add-all').style.display='inline-flex';
+  document.getElementById('add-all-count').textContent=scanResults.length;
+  const withEmail=scanResults.filter(r=>r.email);
+  if(withEmail.length){document.getElementById('btn-email-all').style.display='inline-flex';document.getElementById('email-count').textContent=withEmail.length;}
 }
+}
+
+
+// ══ EMAIL BLAST ══
+let emailBlastList=[];
+let emailBlastIndex=0;
+
+function openEmailBlastModal(){
+  emailBlastList=scanResults.filter(r=>r.email);
+  if(!emailBlastList.length){showToast('Aucun résultat avec un email',false);return;}
+  document.getElementById('eblast-count-info').innerHTML=
+    `<strong>${emailBlastList.length} prospects</strong> avec email sur ${scanResults.length} résultats · 
+    ${emailBlastList.filter(r=>!r.website).length} sans site web · 
+    ${emailBlastList.filter(r=>r.phone).length} avec téléphone`;
+  setEmailTemplate('prospect');
+  document.getElementById('email-blast-modal').classList.add('show');
+}
+
+function setEmailTemplate(type){
+  const subjectEl=document.getElementById('eblast-subject');
+  const bodyEl=document.getElementById('eblast-body');
+  if(type==='prospect'){
+    subjectEl.value='{nom} – 2 idées concrètes pour attirer plus de clients';
+bodyEl.value=`Bonjour,
+
+En regardant votre activité "{nom}" à {ville}, j'ai remarqué quelques opportunités simples qui pourraient vous faire gagner des clients — sans effort supplémentaire de votre part.
+
+La plupart des professionnels perdent des prospects à cause de trois points précis :
+→ Appels manqués ou réponses trop tardives
+→ Absence de suivi automatique des demandes
+→ Un site qui ne convertit pas les visiteurs en acheteur
+
+Je mets en place des systèmes légers et efficaces pour capter les demandes, répondre automatiquement et remplir votre agenda — sans que vous ayez à y penser.
+
+Si ça vous parle, je vous propose un échange de 10 minutes cette semaine pour vous montrer concrètement ce que je ferais pour vous — sans engagement.
+
+Seriez-vous disponible demain en fin de journée ?
+
+Alexis Kechichian
+Directeur – Leadsvision
+07 59 53 64 75`;
+  } else if(type==='nosite'){
+    subjectEl.value='Créez votre site web professionnel — {nom}';
+    bodyEl.value=`Bonjour,
+
+Je me permets de vous contacter car j'ai remarqué que {nom} ne dispose pas encore de site web.
+
+Aujourd'hui, 80% des clients recherchent un professionnel sur internet avant de le contacter. Un site vitrine simple et efficace peut faire une vraie différence pour votre activité.
+
+Je propose des sites clés en main, adaptés aux TPE et indépendants, à des tarifs accessibles.
+
+Puis-je vous envoyer quelques exemples de réalisations ?
+
+Cordialement,
+[Votre prénom]`;
+  } else if(type==='relance'){
+    subjectEl.value='Suite à notre précédent contact — {nom}';
+    bodyEl.value=`Bonjour,
+
+Je me permets de revenir vers vous suite à mon précédent message concernant {nom}.
+
+Je reste disponible si vous souhaitez échanger sur votre projet de présence en ligne. N'hésitez pas à me répondre directement à cet email.
+
+Cordialement,
+[Votre prénom]`;
+  }
+}
+
+// Remplace resolveTemplate par :
+function resolveSubject(template, contact){
+  return template
+    .replace(/\{nom\}/g, contact.biz||'votre entreprise')
+    .replace(/\{ville\}/g, contact.ville||'votre ville')
+    .replace(/\{dirigeant\}/g, contact.dirigeant||'');
+}
+
+function resolveTemplate(template, contact, withImage = false){
+  const imgUrl = document.getElementById('eblast-image')?.value?.trim();
+const imgBlock = (withImage && imgUrl)
+  ? `<tr><td style="padding:0;text-align:center;background:#0d1117;line-height:0;font-size:0">
+      <div style="background:#0d1117;padding:20px 0 0 0;margin:0">
+        <img src="${imgUrl}" alt="Logo" width="90" height="90"
+          style="width:90px;height:90px;border-radius:50%;object-fit:cover;display:inline-block;border:2px solid rgba(255,255,255,0.1);"/>
+      </div>
+    </td></tr>`
+  : '';
+
+  const bodyText = template
+    .replace(/\{nom\}/g, contact.biz||'votre entreprise')
+    .replace(/\{ville\}/g, contact.ville||'votre ville')
+    .replace(/\{dirigeant\}/g, contact.dirigeant||'')
+    .split('\n')
+    .filter(l => l.trim() !== '')
+    .map(line => `<p style="margin:0 0 14px 0;line-height:1.75;color:#1a1a2e;font-size:15px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif">${line}</p>`)
+    .join('');
+
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"/></head>
+<body style="margin:0;padding:0;background:#f0f2f8;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif">
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0d1117;padding:0">
+  <tr><td align="center">
+    <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:14px;overflow:hidden;box-shadow:0 4px 32px rgba(0,0,0,0.10)">
+
+      ${imgBlock}
+
+      <!-- HEADER -->
+      <tr><td style="background:#0d1117;padding:16px 32px;text-align:left">
+        <span style="font-size:19px;font-weight:700;color:#ffffff;letter-spacing:-0.4px">Leadsvision</span>
+        <span style="font-size:11px;color:rgba(255,255,255,0.35);margin-left:10px">Web Design &amp; Développement</span>
+      </td></tr>
+
+      <!-- BODY -->
+      <tr><td style="padding:30px 36px 10px 36px">
+        ${bodyText}
+      </td></tr>
+
+      <!-- CTA BUTTON -->
+      <tr><td style="padding:10px 36px 30px 36px;text-align:center">
+        <a href="tel:0759536475"
+          style="display:inline-block;background:#1c54f0;color:#ffffff;text-decoration:none;
+                 padding:14px 36px;border-radius:50px;font-size:15px;font-weight:700;
+                 font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;letter-spacing:0.3px;
+                 box-shadow:0 4px 16px rgba(28,84,240,0.35)">
+          📞 &nbsp;Appeler maintenant
+        </a>
+      </td></tr>
+
+      <!-- DIVIDER -->
+      <tr><td style="padding:0 36px"><div style="height:1px;background:#eaeef6"></div></td></tr>
+
+      <!-- FOOTER -->
+      <tr><td style="padding:22px 36px 28px;background:#f8f9fc;text-align:center">
+        <p style="margin:0 0 2px 0;font-size:14px;font-weight:700;color:#0d1117;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif">Alexis Kechichian</p>
+        <p style="margin:0 0 6px 0;font-size:12px;color:#6b7280;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif">Directeur — Leadsvision</p>
+        <p style="margin:0 0 14px 0">
+          <a href="tel:0759536475" style="font-size:13px;color:#1c54f0;text-decoration:none;font-weight:600;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif">07 59 53 64 75</a>
+        </p>
+
+      </td></tr>
+
+    </table>
+  </td></tr>
+</table>
+</body></html>`;
+}
+
+function copyEmailList(){
+  const emails=emailBlastList.map(r=>r.email).join(', ');
+  navigator.clipboard.writeText(emails)
+    .then(()=>showToast(`${emailBlastList.length} emails copiés`,true))
+    .catch(()=>alert(emails));
+}
+
+async function openMailtoBlast(){
+  const subject=document.getElementById('eblast-subject').value;
+  const body=document.getElementById('eblast-body').value;
+  if(!subject||!body){showToast('Objet et message requis',false);return;}
+  
+  const testContact={
+    email:'pro.leadsvision@gmail.com',
+    biz:'Restaurant Le Gourmet',
+    ville:'Paris',
+    dirigeant:null
+  };
+  const listWithMe=[testContact,...emailBlastList];
+  
+  let sent=0,failed=0;
+  closeModals();
+  for(const r of listWithMe){
+    try{
+      const resp=await fetch('/gmail/send',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          to:r.email,
+          subject:resolveSubject(subject,r),
+          body:resolveTemplate(body,r,true)
+        })
+      });
+      if(resp.ok){
+        sent++;
+        showToast(`✓ ${sent}/${listWithMe.length} — ${r.biz||r.email}`,true);
+        if(r.email&&r.biz!=='Restaurant Le Gourmet'){
+          recordSentEmail(r,subject,'blast');
+        }
+      }else failed++;
+    }catch(e){failed++;}
+    if(sent+failed<listWithMe.length){
+      const wait=45000+Math.random()*45000;
+      showToast(`Prochain envoi dans ${Math.round(wait/1000)}s…`,true);
+      await new Promise(r=>setTimeout(r,wait));
+    }
+  }
+  showToast(`Terminé — ${sent} envoyés${failed?' · '+failed+' échecs':''}`,sent>0);
+}
+
+async function openMailtoOneByOne(){
+  const subject=document.getElementById('eblast-subject').value;
+  const body=document.getElementById('eblast-body').value;
+  if(!subject||!body){showToast('Objet et message requis',false);return;}
+  
+  const testContact={
+    email:'pro.leadsvision@gmail.com',
+    biz:'Restaurant Le Gourmet',
+    ville:'Paris',
+    dirigeant:null
+  };
+  emailBlastList=[testContact,...emailBlastList];
+  
+  emailBlastIndex=0;
+  closeModals();
+  await sendNextEmailGmail(subject,body);
+}
+
+async function sendNextEmailGmail(subject,body){
+  if(emailBlastIndex>=emailBlastList.length){
+    showToast(`Tous les ${emailBlastList.length} emails envoyés !`,true); return;
+  }
+  const r=emailBlastList[emailBlastIndex];
+  try{
+    const resp=await fetch('/gmail/send',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        to: r.email,
+        subject: resolveSubject(subject, r),
+body: resolveTemplate(body, r, true)
+      })
+    });
+    if(resp.ok){
+      showToast(`✓ ${emailBlastIndex+1}/${emailBlastList.length} — ${r.biz}`,true);
+      if(r.email&&r.biz!=='Restaurant Le Gourmet'){
+        recordSentEmail(r,subject,'one-by-one');
+      }
+    } else {
+      showToast(`✗ Échec pour ${r.biz}`,false);
+    }
+  }catch(e){
+    showToast(`✗ Erreur : ${e.message}`,false);
+  }
+  emailBlastIndex++;
+  if(emailBlastIndex<emailBlastList.length){
+    showConfirm(
+      `Email ${emailBlastIndex}/${emailBlastList.length}`,
+      `Envoyé à "${r.biz}" (${r.email}). Continuer ?`,
+      'Suivant →','btn-primary',
+      ()=>sendNextEmailGmail(subject,body)
+    );
+  } else {
+    showToast('Tous les emails envoyés !',true);
+  }
+}
+
+
 async function scanWithAI(){
   const nicheVal=document.getElementById('scan-niche').value;
   const sel=document.getElementById('scan-niche');
@@ -1591,7 +2249,7 @@ async function scanWithAI(){
   setProgress(3,`Démarrage — ${activeSrcs.length} sources en parallèle`);
   const allBiz=()=>[...contacts.map(c=>c.biz),...blocked.map(b=>b.biz),...scanResults.map(r=>r.biz)].filter(Boolean);
 // Délai progressif entre sources pour éviter la surcharge API
-  const delay=i=>new Promise(r=>setTimeout(r,i*3000));
+  const delay=i=>new Promise(r=>setTimeout(r,i*500));
   const tasks=activeSrcs.map(async(srcKey,srcIdx)=>{
     await delay(srcIdx);
     if(scanAborted)return;setPillStatus(srcKey,'running');
@@ -1611,18 +2269,67 @@ async function scanWithAI(){
   });
   let done=0;
   for(const t of tasks){await t;done++;setProgress(10+(done/activeSrcs.length*75),`${done}/${activeSrcs.length} sources · ${scanResults.length} contacts`);}
+
+  // ── BOUCLE DE RELANCE jusqu'à atteindre targetBatch ──
+  let extraRound=0;
+  const MAX_EXTRA=5;
+  while(scanResults.length<targetBatch&&!scanAborted&&extraRound<MAX_EXTRA){
+    extraRound++;
+    const stillNeeded=targetBatch-scanResults.length;
+    const quotaExtra=Math.max(stillNeeded,10);
+    setProgress(80+extraRound*3,`Relance ${extraRound}/${MAX_EXTRA} — ${scanResults.length}/${targetBatch} leads — encore ${stillNeeded} à trouver…`);
+    log('pf',`━━ Relance ${extraRound} — ${scanResults.length}/${targetBatch} leads trouvés, encore ${stillNeeded} à chercher`,'log-info');
+    const allBizNow=()=>[...contacts.map(c=>c.biz),...blocked.map(b=>b.biz),...scanResults.map(r=>r.biz)].filter(Boolean);
+    const delayR=i=>new Promise(r=>setTimeout(r,i*1500));
+    let addedThisRound=0;
+    const relanceTasks=activeSrcs.map(async(srcKey,srcIdx)=>{
+      await delayR(srcIdx);
+      if(scanAborted||scanResults.length>=targetBatch)return;
+      setPillStatus(srcKey,'running');
+      try{
+        const{results,queries}=await callSourceAPI(srcKey,nicheVal,ville,quotaExtra,allBizNow());
+        if(scanAborted)return;
+        let added=0;
+        for(const r of results){
+          if(scanResults.length>=targetBatch)break;
+          if(isBlocked(r)){continue;}
+          if(isDup(r,contacts)||isDup(r,scanResults))continue;
+          const fullR={...r,niche:nicheName,id:Date.now()+Math.random(),tags:r.has_website?[]:['Pas de site'],status:'new',score:r.phone?7:5,notes:'',createdAt:today()};
+          scanResults.push(fullR);appendResult(fullR,scanResults.length-1);added++;
+        }
+        if(added>0){setPillStatus(srcKey,'done',`+${added}`);log(srcKey,` Relance → +${added} (total ${scanResults.length}/${targetBatch})`,'log-ok');}
+        else{setPillStatus(srcKey,'empty');log(srcKey,` 0 nouveau résultat`,'log-info');}
+        addedThisRound+=added;
+      }catch(err){if(!scanAborted){setPillStatus(srcKey,'error');log(srcKey,` Erreur : ${err.message}`,'log-err');}}
+    });
+    await Promise.all(relanceTasks);
+    if(addedThisRound===0){
+      log('pf',`⚠️ Relance ${extraRound} sans résultat — zone peut-être épuisée`,'log-info');
+      break;
+    }
+    if(scanResults.length<targetBatch&&!scanAborted)await new Promise(r=>setTimeout(r,2000));
+  }
+  // ── FIN BOUCLE ──
+
   document.getElementById('btn-stop').style.display='none';btn.disabled=false;btn.textContent='Lancer le scan';
-  setProgress(100,'Terminé');
+  setProgress(100,`Terminé — ${scanResults.length}/${targetBatch} leads`);
   if(!scanResults.length){showAlert('Aucun résultat. Vérifiez la configuration du proxy et la clé API.','warn');return;}
   const wP=scanResults.filter(r=>r.phone).length,wE=scanResults.filter(r=>r.email).length,wS=scanResults.filter(r=>r.website).length,wD=scanResults.filter(r=>r.dirigeant).length;
-  showAlert(`${scanResults.length} contacts trouvés · ${wP} téléphones · ${wE} emails · ${wS} sites web · ${wD} dirigeants identifiés`,'ok');
+  const achieved=scanResults.length>=targetBatch;
+  showAlert(`${achieved?'✅':'⚠️'} ${scanResults.length} contacts trouvés${achieved?' (objectif atteint)':` — objectif : ${targetBatch}`} · ${wP} téléphones · ${wE} emails · ${wS} sites web · ${wD} dirigeants`,'ok');
   document.getElementById('btn-add-all').style.display='inline-flex';document.getElementById('add-all-count').textContent=scanResults.length;
+  const withEmail=scanResults.filter(r=>r.email);
+  const emailBtn=document.getElementById('btn-email-all');
+  if(withEmail.length){emailBtn.style.display='inline-flex';document.getElementById('email-count').textContent=withEmail.length;}
   logActivity(`Scan : +${scanResults.length} prospects (${nicheName}, ${ville})`,'scan');
 }
 function showAlert(msg,type){const cls={ok:'alert-ok',warn:'alert-warn',info:'alert-info'}[type];document.getElementById('scan-alert').innerHTML=`<div class="alert ${cls}">${msg}</div>`;}
 
 function appendResult(r,idx){
   if(phoneOnlyActive&&!r.phone)return;
+if(emailOnlyActive&&!r.email)return;
+  if(noSiteOnlyActive&&r.website)return;
+
   if(r.phone&&isBlacklistedPhone(r.phone))return;
   const alreadyIn=contacts.some(c=>isDup(r,[c]));
   const av=avc(r.biz||'');
@@ -1669,13 +2376,13 @@ function openScanAction(idx,btn){
 }
 function scanActionAdd(){
   const r=scanResults[scanActionIdx];if(!r)return;
-  if(!isDup(r,contacts)){contacts.push({...r,id:Date.now()+Math.random()});saveContacts();logActivity(`Contact ajouté : ${r.biz}`,'add');renderAll();}
+  if(!isDup(r,contacts)){contacts.push({...r,id:Date.now()+Math.random(),teamId:getTeamId()});saveContacts();logActivity(`Contact ajouté : ${r.biz}`,'add');renderAll();}
   _finishScanAction('Ajouté','var(--green-lt)','var(--green)');
 }
 function scanActionRecall(){
   const r=scanResults[scanActionIdx];if(!r)return;
   if(!isDup(r,contacts)){
-    const c={...r,id:Date.now()+Math.random(),tags:[...(r.tags||[]),'Rappeler']};
+    const c={...r,id:Date.now()+Math.random(),tags:[...(r.tags||[]),'Rappeler'],teamId:getTeamId()};
     contacts.push(c);saveContacts();
     if(r.biz){agenda.push({id:Date.now()+Math.random(),title:`Rappeler ${r.biz}`,date:today(),time:'',contactId:null,contactName:r.biz,type:'call',notes:r.phone||'',done:false,created:today()});saveAgenda();}
     logActivity(`À rappeler : ${r.biz}`,'call');renderAll();
@@ -1699,11 +2406,23 @@ function quickBlock(idx,btn){
   const addBtn=document.getElementById('add-btn-'+idx);if(addBtn){addBtn.textContent='Exclu';addBtn.disabled=true;}
   logActivity(`Non intéressé : ${r.biz}`,'block');renderAll();
 }
+function excludeAlreadyEmailed(){
+  let excluded=0;
+  document.querySelectorAll('.result-item').forEach((el,idx)=>{
+    const r=scanResults[idx];if(!r)return;
+    if(isAlreadyEmailed(r)){
+      el.style.display='none';excluded++;
+    }
+  });
+  if(excluded>0)showToast(`${excluded} prospect${excluded>1?'s':''} déjà contacté${excluded>1?'s':''} masqué${excluded>1?'s':''}`,true);
+  else showToast('Aucun prospect déjà contacté dans cette liste',false);
+}
+
 function addAllResults(){
   let n=0;
   scanResults.forEach((r,i)=>{
     if(isDup(r,contacts)||isBlocked(r))return;
-    contacts.push({...r,id:Date.now()+Math.random()+i});
+    contacts.push({...r,id:Date.now()+Math.random()+i,teamId:getTeamId()});
     const b=document.getElementById('add-btn-'+i);
     if(b){b.textContent='Ajouté';b.disabled=true;b.classList.remove('btn-primary');b.style.cssText='background:var(--green-lt)!important;color:var(--green)!important;border-color:transparent!important';}
     n++;
@@ -1766,7 +2485,8 @@ function saveAgendaEvent(){
   if(!title||!date){alert('Titre et date requis.');return;}
   const contactId=document.getElementById('ag-contact').value;
   const contact=contacts.find(c=>eid(c.id)===eid(contactId));
-  const ev={id:editingAgendaId||Date.now()+Math.random(),title,date,time:document.getElementById('ag-time').value,contactId:contactId||null,contactName:contact?.biz||'',type:document.getElementById('ag-type').value,notes:document.getElementById('ag-notes').value,done:false,created:today()};
+const ev={id:editingAgendaId||Date.now()+Math.random(),title,date,time:document.getElementById('ag-time').value,contactId:contactId||null,contactName:contact?.biz||'',type:document.getElementById('ag-type').value,notes:document.getElementById('ag-notes').value,done:false,created:today(),teamId:getTeamId(),createdBy:currentUser?.id||null,createdByName:currentUser?.name||currentUser?.login||'?'};
+
   if(editingAgendaId){const i=agenda.findIndex(a=>eid(a.id)===eid(editingAgendaId));if(i!==-1){const old=agenda[i];ev.done=old.done;ev.created=old.created;agenda[i]=ev;}}
   else agenda.push(ev);
   saveAgenda();closeModals();renderAgenda();updateStats();
@@ -1883,7 +2603,9 @@ function renderAgenda(){
         <div class="upc-mon">${['jan','fév','mar','avr','mai','jun','jul','aoû','sep','oct','nov','déc'][d.getMonth()]}</div>
       </div>
       <div style="flex:1">
-        <div style="font-size:13px;font-weight:600;cursor:pointer" onclick="openInlineEdit('${ev.id}')">${AGENDA_TYPES[ev.type]||'Tâche'} · ${ev.title}</div>
+                <div style="font-size:13px;font-weight:600;cursor:pointer" onclick="openInlineEdit('${ev.id}')">${AGENDA_TYPES[ev.type]||'Tâche'} · ${ev.title}${ev.createdByName&&currentUser?.role==='admin'?` <span style="font-size:11px;color:var(--text3);font-weight:400">par ${ev.createdByName}</span>`:''}
+        </div>
+
         ${ev.contactName?`<div style="font-size:12px;color:var(--teal);margin-top:2px">${ev.contactName}</div>`:''}
         ${ev.time?`<div style="font-size:12px;color:var(--text3)">${ev.time}</div>`:''}
         ${ev.notes?`<div style="font-size:12px;color:var(--text3);margin-top:2px">${ev.notes.slice(0,60)}</div>`:''}
@@ -1898,7 +2620,16 @@ function renderAgenda(){
 }
 
 function renderContactAgenda(contactId,biz){
-  const evs=agenda.filter(e=>eid(e.contactId)===eid(contactId)||e.contactName===biz).sort((a,b)=>a.date.localeCompare(b.date));
+  const tid=getTeamId();
+  const evs=agenda.filter(e=>{
+    if(!isSuperAdmin()&&e.teamId&&e.teamId!==tid)return false;
+    // Closer voit uniquement agenda de ses setters + le sien
+    if(currentUser?.role==='closer'){
+      const teamMembers=users.filter(u=>u.teamId===tid).map(u=>u.id);
+      if(e.createdBy&&!teamMembers.includes(e.createdBy))return false;
+    }
+    return eid(e.contactId)===eid(contactId)||e.contactName===biz;
+  }).sort((a,b)=>a.date.localeCompare(b.date));
   const t=today();
   return`<div class="agenda-wrap fi">
     <div class="agenda-box">
@@ -1940,10 +2671,16 @@ function renderContactWaHistory(contactId,biz){
 }
 
 // ══ CONTACTS VIEW ══
+function getTeamId(){return currentUser?.teamId||null;}
+function isSuperAdmin(){return currentUser?.role==='superadmin';}
+
 function getFiltered(){
   const q=document.getElementById('search').value.toLowerCase();
   const sort=document.getElementById('sort-sel').value;
+  const tid=getTeamId();
   let list=contacts.filter(c=>{
+    // Isolation par équipe
+    if(!isSuperAdmin()&&c.teamId!==tid)return false;
     if(currentTagFilter&&!(c.tags||[]).includes(currentTagFilter))return false;
     if(currentNicheFilter!=='all'&&c.niche!==currentNicheFilter)return false;
     if(q&&!`${c.biz||''} ${c.phone||''} ${c.ville||''} ${c.dirigeant||''} ${c.niche||''}`.toLowerCase().includes(q))return false;
@@ -2175,20 +2912,91 @@ function showConfirm(title,msg,okLabel,okStyle,cb){
 function confirmOk(){document.getElementById('confirm-overlay').classList.remove('show');if(_confirmCallback)_confirmCallback();_confirmCallback=null;}
 function confirmCancel(){document.getElementById('confirm-overlay').classList.remove('show');_confirmCallback=null;}
 
+
+function renderSuperAdminView(){
+  const el=document.getElementById('users-list');
+  const now=today();
+  el.innerHTML=`
+    <div style="margin-bottom:16px">
+      <div class="page-header" style="margin-bottom:10px">
+        <div><div class="page-title">Gestion des équipes</div><div class="page-sub">${teams.length} équipe(s) active(s)</div></div>
+        <button class="btn btn-primary" style="margin-left:auto" onclick="openCreateTeamModal()">+ Nouvelle équipe</button>
+      </div>
+    </div>
+    ${!teams.length?'<div style="text-align:center;padding:40px;color:var(--text3);font-size:13px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg)">Aucune équipe créée. Créez la première équipe ci-dessus.</div>':
+    teams.map(t=>{
+      const members=users.filter(u=>u.teamId===t.id);
+      const admin=members.find(u=>u.role==='admin');
+      const sub=t.subscription||{};
+      const isExpired=sub.expiresAt&&sub.expiresAt<now;
+      const subColor=sub.status==='active'&&!isExpired?'var(--green)':isExpired?'var(--red)':'var(--text3)';
+      const subLabel=isExpired?'Expiré':sub.status==='active'?'Actif':'Inactif';
+      return`<div class="user-card-el fi" style="flex-direction:column;align-items:stretch;gap:10px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="user-card-av" style="background:var(--blue-lt);color:var(--blue)">${(t.name||'?')[0].toUpperCase()}</div>
+          <div style="flex:1">
+            <div class="user-card-name">${t.name}</div>
+            <div class="user-card-meta">Créée le ${t.createdAt} · Admin : ${admin?.login||'—'}</div>
+          </div>
+          <span style="font-size:12px;font-weight:600;color:${subColor};background:${subColor==='var(--green)'?'var(--green-lt)':subColor==='var(--red)'?'var(--red-lt)':'var(--surface)'};padding:3px 10px;border-radius:20px;border:1px solid ${subColor==='var(--green)'?'rgba(14,159,110,0.25)':subColor==='var(--red)'?'rgba(220,38,38,0.25)':'var(--border)'}">${subLabel}${sub.expiresAt?' · exp. '+sub.expiresAt:''}</span>
+          <button class="btn btn-sm btn-danger" onclick="deleteTeam('${t.id}')">Supprimer</button>
+        </div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;padding-top:8px;border-top:1px solid var(--border)">
+          ${members.map(u=>{const rc={admin:'role-admin',setter:'role-setter',closer:'role-closer',user:'role-user'};return`<span class="role-badge ${rc[u.role]||'role-user'}">${u.name||u.login} (${u.role})</span>`;}).join('')}
+          <span style="font-size:11px;color:var(--text3);padding:3px 8px">${members.length} membre(s)</span>
+        </div>
+      </div>`;
+    }).join('')}`;
+}
+
+function openCreateTeamModal(){document.getElementById('create-team-modal').classList.add('show');}
+
+function saveNewTeam(){
+  const name=document.getElementById('ct-name').value.trim();
+  const login=document.getElementById('ct-login').value.trim();
+  const pass=document.getElementById('ct-pass').value;
+  const expires=document.getElementById('ct-expires').value;
+  if(!name||!login||!pass){showToast('Nom équipe, identifiant et mot de passe requis',false);return;}
+  fetch('/teams/create',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({teamName:name,adminLogin:login,adminPass:pass,adminName:document.getElementById('ct-admin-name').value.trim()||login,expiresAt:expires||null})
+  }).then(r=>r.json()).then(async d=>{
+    if(d.error){showToast('Erreur : '+d.error,false);return;}
+    showToast(`Équipe "${name}" créée`,true);closeModals();
+    const[u,tm]=await Promise.all([serverLoad('users'),serverLoad('teams')]);
+    if(u)users=u;if(tm)teams=tm;
+    renderUsers();
+  }).catch(e=>showToast('Erreur serveur : '+e.message,false));
+}
+
+function deleteTeam(id){
+  const t=teams.find(x=>x.id===id);if(!t)return;
+  showConfirm('Supprimer l\'équipe',`Supprimer l'équipe "${t.name}" et tous ses membres ?`,'Supprimer','btn-danger',async()=>{
+    teams=teams.filter(x=>x.id!==id);
+    users=users.filter(u=>u.teamId!==id);
+    await Promise.all([serverSave('teams',teams),serverSave('users',users)]);
+    renderUsers();showToast(`Équipe supprimée`,true);
+  });
+}
+
+
 // ══ USERS ══
 function renderUsers(){
-  const roleLabels={admin:'Administrateur',setter:'Setter',closer:'Closer',user:'Utilisateur'};
+  if(isSuperAdmin()){renderSuperAdminView();return;}
+const roleLabels={admin:'Administrateur',setter:'Setter',closer:'Closer',user:'Utilisateur'};
   const roleClass={admin:'role-admin',setter:'role-setter',closer:'role-closer',user:'role-user'};
   const avColors=['rgba(28,84,240,0.12)','rgba(8,145,178,0.12)','rgba(217,119,6,0.12)','rgba(190,24,93,0.12)','rgba(124,58,237,0.12)'];
   const avTxt=['var(--blue)','var(--teal)','var(--amber)','var(--pink)','var(--purple)'];
-  document.getElementById('users-list').innerHTML=users.map((u,i)=>`<div class="user-card-el fi">
+  const tid=getTeamId();
+  const visibleUsers=users.filter(u=>u.teamId===tid&&u.role!=='superadmin');
+  document.getElementById('users-list').innerHTML=visibleUsers.map((u,i)=>`<div class="user-card-el fi">
     <div class="user-card-av" style="background:${avColors[i%avColors.length]};color:${avTxt[i%avTxt.length]}">${(u.name||u.login||'?')[0].toUpperCase()}</div>
     <div style="flex:1">
       <div class="user-card-name">${u.name||u.login}</div>
       <div class="user-card-meta">@${u.login} · Créé le ${u.created||'—'}</div>
     </div>
     <span class="role-badge ${roleClass[u.role]||'role-user'}">${roleLabels[u.role]||'Utilisateur'}</span>
-    ${u.login!=='admin'?`<button class="btn btn-sm btn-danger" onclick="deleteUser('${u.id}')">Supprimer</button>`:'<span style="font-size:11px;color:var(--text3)">Compte système</span>'}
+    ${u.role!=='admin'?`<button class="btn btn-sm btn-danger" onclick="deleteUser('${u.id}')">Supprimer</button>`:'<span style="font-size:11px;color:var(--text3)">Propriétaire équipe</span>'}
+
   </div>`).join('');
 }
 function openUserModal(){
@@ -2203,7 +3011,8 @@ function saveUser(){
   const name=document.getElementById('u-name').value.trim()||login;
   if(!login||!pass){alert('Identifiant et mot de passe requis.');return;}
   if(users.find(u=>u.login===login)){alert('Cet identifiant existe déjà.');return;}
-  users.push({id:Date.now()+'',login,name,pass,role:document.getElementById('u-role').value,created:today()});
+    users.push({id:Date.now()+'',login,name,pass,role:document.getElementById('u-role').value,teamId:getTeamId(),created:today()});
+
   saveUsers();closeModals();renderUsers();
 }
 function deleteUser(id){
@@ -2257,7 +3066,7 @@ function goContact(id){switchView('contacts',document.getElementById('nav-contac
 function switchView(view,el){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   if(el)el.classList.add('active');
-  ['contacts','scanner','pipeline','agenda','blocked','stats','users','rdv'].forEach(v=>{
+['contacts','scanner','pipeline','agenda','blocked','stats','users','rdv','emails'].forEach(v=>{
     const ev=document.getElementById('view-'+v);if(ev)ev.style.display='none';
   });
   const show=document.getElementById('view-'+view);
@@ -2267,13 +3076,15 @@ function switchView(view,el){
     else show.style.display='block';
   }
   document.getElementById('search-wrap').style.display=view==='contacts'?'':'none';
-  document.getElementById('view-title').textContent={contacts:'Contacts',scanner:'Prospection automatisée',pipeline:'Pipeline commercial',agenda:'Agenda & Rappels',blocked:'Non intéressés',stats:'Statistiques',users:'Utilisateurs',rdv:'Rendez-vous'}[view]||view;
+  document.getElementById('view-title').textContent={contacts:'Contacts',scanner:'Prospection automatisée',pipeline:'Pipeline commercial',agenda:'Agenda & Rappels',blocked:'Non intéressés',stats:'Statistiques',users:'Utilisateurs',rdv:'Rendez-vous',emails:'Emails envoyés'}[view]||view;
+
   if(view==='pipeline')renderPipeline();
   if(view==='agenda')renderAgenda();
   if(view==='blocked')renderBlocked();
   if(view==='stats'){currentStatsTab='prospects';document.querySelectorAll('.stats-tab').forEach((t,i)=>t.classList.toggle('active',i===0));renderCurrentStatsTab();}
   if(view==='users')renderUsers();
-  if(view==='rdv')renderRdv();
+if(view==='rdv')renderRdv();
+  if(view==='emails')renderEmailView();
 }
 function renderFilterChips(){
   const map={};contacts.forEach(c=>{map[c.niche]=(map[c.niche]||0)+1});
@@ -2308,7 +3119,8 @@ function updateStats(){
   document.getElementById('nc-devis').textContent=q;
   document.getElementById('nc-blocked').textContent=blocked.length;
   document.getElementById('nc-agenda').textContent=agenda.filter(e=>!e.done&&e.date>=today()).length;
-  document.getElementById('nc-rdv').textContent=rdvList.filter(r=>r.status==='pending').length;
+document.getElementById('nc-rdv').textContent=rdvList.filter(r=>r.status==='pending').length;
+  document.getElementById('nc-emails').textContent=sentEmails.length;
   document.getElementById('sb-wa-count').textContent=messages.length;
   const called=contacts.filter(c=>c.status!=='new').length;
   const pct=total?Math.round(called/total*100):0;
@@ -2340,7 +3152,7 @@ function editContact(id){
 function toggleTag(el){const t=el.dataset.tag;if(selectedTags.includes(t)){selectedTags=selectedTags.filter(x=>x!==t);el.classList.remove('on');}else{selectedTags.push(t);el.classList.add('on');}}
 function saveContact(){
   const biz=document.getElementById('f-biz').value.trim();if(!biz){alert('Le nom est obligatoire.');return;}
-  const data={biz,prenom:document.getElementById('f-prenom').value.trim(),nom:document.getElementById('f-nom').value.trim(),phone:document.getElementById('f-phone').value.trim()||null,email:document.getElementById('f-email').value.trim()||null,ville:document.getElementById('f-ville').value.trim()||'—',niche:document.getElementById('f-niche').value,website:cleanWebsite(document.getElementById('f-site').value.trim()),notes:document.getElementById('f-notes').value.trim(),score:parseInt(document.getElementById('f-score').value)||5,status:document.getElementById('f-status').value,tags:[...selectedTags],source:'Manuel',createdAt:today()};
+  const data={biz,prenom:document.getElementById('f-prenom').value.trim(),nom:document.getElementById('f-nom').value.trim(),phone:document.getElementById('f-phone').value.trim()||null,email:document.getElementById('f-email').value.trim()||null,ville:document.getElementById('f-ville').value.trim()||'—',niche:document.getElementById('f-niche').value,website:cleanWebsite(document.getElementById('f-site').value.trim()),notes:document.getElementById('f-notes').value.trim(),score:parseInt(document.getElementById('f-score').value)||5,status:document.getElementById('f-status').value,tags:[...selectedTags],source:'Manuel',createdAt:today(),teamId:getTeamId()};
   data.has_website=!!data.website;
   if(editingId){const idx=contacts.findIndex(x=>eid(x.id)===eid(editingId));contacts[idx]={...contacts[idx],...data};selectedId=editingId;}
   else{data.id=Date.now();contacts.push(data);selectedId=data.id;logActivity(`Contact ajouté : ${biz}`,'add');}
@@ -2411,6 +3223,230 @@ function renderAll(){updateStats();renderNicheNav();renderFilterChips();renderLi
     initApp();
   }
 })();
+</script>
+
+<!-- EMAIL BLAST MODAL -->
+<div class="modal-overlay" id="email-blast-modal">
+  <div class="modal" style="width:600px">
+    <div class="modal-title">Envoi groupé d'emails</div>
+    <div id="gmail-status-bar" style="display:flex;align-items:center;gap:8px;margin-bottom:14px;padding:9px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);font-size:12.5px">
+  <span id="gmail-status-dot" style="width:8px;height:8px;border-radius:50%;background:var(--text3);flex-shrink:0"></span>
+  <span id="gmail-status-lbl">Gmail non connecté</span>
+  <a href="/gmail/auth" target="_blank" class="btn btn-sm btn-primary" style="margin-left:auto;text-decoration:none" onclick="setTimeout(checkGmailStatus,3000)">Connecter Gmail</a>
+</div>
+    <div id="eblast-count-info" style="font-size:12.5px;color:var(--text2);margin-bottom:14px;padding:10px 12px;background:var(--surface);border-radius:var(--radius);border:1px solid var(--border)"></div>
+    <div style="margin-bottom:11px">
+  <label class="form-label">Image d'en-tête (URL optionnelle)</label>
+  <input class="form-input" id="eblast-image" placeholder="https://ton-site.com/banniere.png"/>
+</div>
+<div style="margin-bottom:11px">
+  <label class="form-label">Objet de l'email *</label>
+  <input class="form-input" id="eblast-subject" placeholder="Création de site web pour [Votre entreprise]"/>
+    </div>
+    <div style="margin-bottom:11px">
+      <label class="form-label">Corps du message *</label>
+      <textarea class="form-input" id="eblast-body" rows="8" style="resize:vertical;line-height:1.75;font-size:13px" placeholder="Bonjour,&#10;&#10;Je me permets de vous contacter…"></textarea>
+    </div>
+    <div class="alert alert-info" style="font-size:12px;margin-bottom:11px">
+      Variables disponibles : <code style="background:var(--blue-lt);padding:1px 5px;border-radius:3px">{nom}</code> (nom entreprise) · <code style="background:var(--blue-lt);padding:1px 5px;border-radius:3px">{ville}</code> · <code style="background:var(--blue-lt);padding:1px 5px;border-radius:3px">{dirigeant}</code><br>
+      Les emails s'ouvriront dans votre client mail (mailto:) un par un, ou vous pouvez copier la liste.
+    </div>
+    <div style="margin-bottom:11px">
+      <label class="form-label">Modèles rapides</label>
+      <div style="display:flex;gap:5px;flex-wrap:wrap">
+        <button class="chip" onclick="setEmailTemplate('prospect')">Premier contact</button>
+        <button class="chip" onclick="setEmailTemplate('nosite')">Sans site web</button>
+        <button class="chip" onclick="setEmailTemplate('relance')">Relance</button>
+      </div>
+    </div>
+    <div class="modal-footer" style="flex-wrap:wrap;gap:7px">
+      <button class="btn" onclick="closeModals()">Annuler</button>
+      <button class="btn btn-ghost" onclick="copyEmailList()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copier les emails
+      </button>
+      <button class="btn" style="background:var(--amber-lt);color:var(--amber);border-color:rgba(217,119,6,0.2)" onclick="openMailtoBlast()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        Ouvrir dans mon client mail
+      </button>
+      <button class="btn btn-primary" onclick="openMailtoOneByOne()">
+        Envoyer un par un →
+      </button>
+    </div>
+  </div>
+</div>
+<!-- RELANCE INDIVIDUELLE MODAL -->
+<div class="modal-overlay" id="relance-modal">
+  <div class="modal" style="width:520px">
+    <div class="modal-title">Relancer ce prospect</div>
+    <div id="relance-modal-info" style="font-size:12.5px;color:var(--text2);margin-bottom:14px;padding:10px 12px;background:var(--surface);border-radius:var(--radius);border:1px solid var(--border)"></div>
+    <div style="margin-bottom:11px"><label class="form-label">Objet *</label><input class="form-input" id="relance-subject" placeholder="Relance — votre projet web"/></div>
+    <div style="margin-bottom:11px"><label class="form-label">Message *</label><textarea class="form-input" id="relance-body" rows="7" style="resize:vertical;line-height:1.75;font-size:13px"></textarea></div>
+    <div class="alert alert-info" style="font-size:12px;margin-bottom:11px">Variables : <code style="background:var(--blue-lt);padding:1px 5px;border-radius:3px">{nom}</code> · <code style="background:var(--blue-lt);padding:1px 5px;border-radius:3px">{ville}</code></div>
+    <div class="modal-footer"><button class="btn" onclick="closeModals()">Annuler</button><button class="btn btn-primary" onclick="sendRelance()">Envoyer la relance</button></div>
+  </div>
+</div>
+
+<!-- RELANCE GLOBALE MODAL -->
+<div class="modal-overlay" id="relance-all-modal">
+  <div class="modal" style="width:560px">
+    <div class="modal-title">Relancer tous les prospects (<span id="relance-all-count">0</span>)</div>
+    <div class="alert alert-warn" style="font-size:12px;margin-bottom:14px">Un email de relance sera envoyé à chaque prospect contacté, avec un délai de 45-90s entre chaque envoi.</div>
+    <div style="margin-bottom:11px"><label class="form-label">Objet *</label><input class="form-input" id="relance-all-subject"/></div>
+    <div style="margin-bottom:11px"><label class="form-label">Message *</label><textarea class="form-input" id="relance-all-body" rows="8" style="resize:vertical;line-height:1.75;font-size:13px"></textarea></div>
+    <div class="alert alert-info" style="font-size:12px;margin-bottom:11px">Variables : <code style="background:var(--blue-lt);padding:1px 5px;border-radius:3px">{nom}</code> · <code style="background:var(--blue-lt);padding:1px 5px;border-radius:3px">{ville}</code></div>
+    <div class="modal-footer"><button class="btn" onclick="closeModals()">Annuler</button><button class="btn btn-primary" onclick="startRelanceAll()">Lancer les relances</button></div>
+  </div>
+</div>
+
+<!-- CREATE TEAM MODAL -->
+<!-- CREATE TEAM MODAL -->
+<div class="modal-overlay" id="create-team-modal">
+  <div class="modal" style="width:450px">
+    <div class="modal-title">Nouvelle équipe</div>
+    <div class="alert alert-info" style="margin-bottom:14px;font-size:12px">Crée une équipe avec un admin. L'admin pourra ensuite créer ses setters et closers.</div>
+    <div style="margin-bottom:11px"><label class="form-label">Nom de l'équipe *</label><input class="form-input" id="ct-name" placeholder="Agence XYZ"/></div>
+    <div style="margin-bottom:11px"><label class="form-label">Nom complet de l'admin</label><input class="form-input" id="ct-admin-name" placeholder="Jean Dupont"/></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:11px">
+      <div><label class="form-label">Identifiant admin *</label><input class="form-input" id="ct-login" placeholder="jean.dupont"/></div>
+      <div><label class="form-label">Mot de passe *</label><input class="form-input" id="ct-pass" type="password" placeholder="••••••••"/></div>
+    </div>
+    <div style="margin-bottom:3px"><label class="form-label">Date d'expiration de l'abonnement</label><input class="form-input" id="ct-expires" type="date"/></div>
+    <div class="modal-footer"><button class="btn" onclick="closeModals()">Annuler</button><button class="btn btn-primary" onclick="saveNewTeam()">Créer l'équipe</button></div>
+  </div>
+</div>
+<!-- ═══ CHATBOT SUPPORT ═══ -->
+<div id="chat-bubble" onclick="toggleChat()" style="
+  position:fixed;bottom:22px;right:22px;width:52px;height:52px;
+  background:#1C54F0;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;cursor:pointer;z-index:9999;
+  box-shadow:0 4px 16px rgba(28,84,240,0.4);
+  transition:transform 0.3s cubic-bezier(.34,1.56,.64,1),box-shadow 0.3s ease;
+  animation:chat-pulse 2.5s ease-in-out infinite">
+  <svg width="22" height="22" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+  </svg>
+</div>
+
+<div id="chat-panel" style="
+  position:fixed;bottom:86px;right:22px;width:350px;height:480px;
+  background:#fff;border:1px solid #E2E4EA;border-radius:14px;
+  box-shadow:0 12px 40px rgba(0,0,0,0.15);display:none;
+  flex-direction:column;z-index:9998;overflow:hidden">
+
+  <div style="background:#1C54F0;padding:14px 16px;display:flex;
+    align-items:center;justify-content:space-between;flex-shrink:0">
+    <div>
+      <div style="color:#fff;font-weight:600;font-size:14px">Support PushProspect</div>
+      <div style="color:rgba(255,255,255,0.65);font-size:11px">Réponse immédiate · 07 59 53 64 75</div>
+    </div>
+    <button onclick="toggleChat()" style="background:none;border:none;
+      color:#fff;cursor:pointer;font-size:20px;line-height:1;padding:0">&times;</button>
+  </div>
+
+  <div id="chat-msgs" style="flex:1;overflow-y:auto;padding:12px;
+    display:flex;flex-direction:column;gap:8px;background:#F7F8FA">
+    <div class="msg-bot">Bonjour ! Je suis l'assistant PushProspect. Comment puis-je vous aider ?
+      Pour une urgence : <a href="tel:0759536475" style="color:#1C54F0;font-weight:600">07 59 53 64 75</a>
+    </div>
+  </div>
+
+  <div style="padding:10px;border-top:1px solid #E2E4EA;display:flex;gap:6px;background:#fff;flex-shrink:0">
+    <input id="chat-input" placeholder="Votre question…"
+      onkeydown="if(event.key==='Enter')sendChat()"
+      style="flex:1;padding:8px 11px;border:1px solid #E2E4EA;border-radius:8px;
+      font-size:13px;outline:none;font-family:inherit"/>
+<button onclick="sendChat()"
+      onmousedown="this.style.transform='scale(0.9)';this.style.opacity='0.8'"
+      onmouseup="this.style.transform='scale(1)';this.style.opacity='1'"
+      onmouseleave="this.style.transform='scale(1)';this.style.opacity='1'"
+      style="padding:8px 13px;background:#1C54F0;color:#fff;border:none;
+      border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;
+      transition:transform 0.15s ease, opacity 0.15s ease">
+      Envoyer
+    </button>
+  </div>
+</div>
+
+<script>
+let chatHistory = [];
+let chatOpen = false;
+
+function toggleChat() {
+  chatOpen = !chatOpen;
+  const panel = document.getElementById('chat-panel');
+  const bubble = document.getElementById('chat-bubble');
+  if (chatOpen) {
+    panel.style.display = 'flex';
+    panel.style.opacity = '0';
+    panel.style.transform = 'translateY(20px) scale(0.95)';
+    panel.style.transition = 'opacity 0.4s ease, transform 0.4s cubic-bezier(.34,1.56,.64,1)';
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      panel.style.opacity = '1';
+      panel.style.transform = 'translateY(0) scale(1)';
+    }));
+    bubble.style.transform = 'rotate(90deg) scale(1.08)';
+    bubble.style.animation = 'none';
+    document.getElementById('chat-input').focus();
+  } else {
+    panel.style.transition = 'opacity 0.3s ease, transform 0.3s cubic-bezier(.4,0,.2,1)';
+    panel.style.opacity = '0';
+    panel.style.transform = 'translateY(20px) scale(0.95)';
+    setTimeout(() => { panel.style.display = 'none'; }, 300);
+    bubble.style.transform = 'rotate(0deg) scale(1)';
+    bubble.style.animation = 'chat-pulse 2.5s ease-in-out infinite';
+  }
+}
+function appendMsg(text, role) {
+  const msgs = document.getElementById('chat-msgs');
+  const div = document.createElement('div');
+  div.className = role === 'user' ? 'msg-user' : 'msg-bot';
+  div.style.opacity = '0';
+  div.innerHTML = text;
+  msgs.appendChild(div);
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    div.style.opacity = '';
+  }));
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+
+  appendMsg(text, 'user');
+  chatHistory.push({ role: 'user', content: text });
+
+  const typing = document.createElement('div');
+  typing.className = 'msg-typing';
+  typing.innerHTML = '<span class="dot"></span><span class="dot"></span><span class="dot"></span>';
+  document.getElementById('chat-msgs').appendChild(typing);
+  document.getElementById('chat-msgs').scrollTop = 99999;
+
+try {
+    const [resp] = await Promise.all([
+      fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: chatHistory })
+      }),
+      new Promise(r => setTimeout(r, 3000))  // délai minimum 3s
+    ]);
+    const data = await resp.json();
+    typing.remove();
+    const reply = data.reply || 'Désolé, une erreur est survenue.';
+    appendMsg(reply, 'bot');
+    chatHistory.push({ role: 'assistant', content: reply });
+
+    if (chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
+  } catch(e) {
+    typing.remove();
+    appendMsg('Erreur de connexion. Appelez le <a href="tel:0759536475" style="color:#1C54F0;font-weight:600">07 59 53 64 75</a>', 'bot');
+  }
+}
 </script>
 </body>
 </html>

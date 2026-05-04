@@ -540,6 +540,20 @@ a{color:inherit}
 .dot:nth-child(1) { animation-delay: 0s;   }
 .dot:nth-child(2) { animation-delay: 0.2s; }
 .dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes bolt-pulse {
+  0%,100%{opacity:0.5;transform:scale(1)}
+  50%{opacity:1;transform:scale(1.15)}
+}
+@keyframes bolt-ring {
+  0%,100%{transform:scale(1);opacity:0.4}
+  50%{transform:scale(1.4);opacity:0}
+}
+@keyframes bolt-zap {
+  0%,80%,100%{opacity:1;transform:scale(1)}
+  40%{opacity:0.3;transform:scale(0.8)}
+  60%{opacity:1;transform:scale(1.2)}
+}
 </style>
 </head>
 <body>
@@ -558,7 +572,7 @@ a{color:inherit}
     <label class="login-label">Mot de passe</label>
     <input class="login-input" id="li-pass" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/>
     <button class="login-btn" onclick="doLogin()">Se connecter</button>
-    <div class="login-footer">PushProspect CRM</div>
+    <div class="login-footer">PushProspect CRM · <a href="/register" style="color:rgba(100,140,255,0.7);text-decoration:none">Créer un compte</a></div>
   </div>
 </div>
 
@@ -664,6 +678,11 @@ a{color:inherit}
       Utilisateurs
     </div>
 
+    <div class="nav-item" id="nav-affiliation" onclick="switchView('affiliation',this)">
+  <span class="nav-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+  Affiliation<span class="nav-badge" id="nc-affiliation" style="background:rgba(28,84,240,0.15);color:var(--blue)">€</span>
+</div>
+
     <div class="nav-group-label" style="margin-top:4px">Filtres rapides</div>
     <div class="nav-item" onclick="quickFilter('Chaud')">
       <span class="nav-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></span>
@@ -686,7 +705,36 @@ a{color:inherit}
     <div id="niche-nav"></div>
   </div>
 
-  <div class="sidebar-foot">
+<div class="sidebar-foot">
+    <!-- CRÉDITS BLOC -->
+
+
+
+
+<div style="padding:8px 12px;margin-bottom:8px;position:relative;overflow:visible">
+  <!-- Étiquette plan en bandeau incliné -->
+
+
+  <div style="display:flex;align-items:center;gap:7px">
+    <!-- Éclair animé -->
+    <div style="position:relative;width:22px;height:22px;flex-shrink:0">
+      <div style="position:absolute;inset:0;border-radius:50%;background:rgba(28,84,240,0.2);animation:bolt-ring 1.8s ease-in-out infinite"></div>
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="#7BA4FF" style="animation:bolt-zap 1.8s ease-in-out infinite">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+        </svg>
+      </div>
+    </div>
+    <!-- Nombre -->
+    <span style="font-size:14px;font-weight:600;color:rgba(255,255,255,0.8);font-variant-numeric:tabular-nums;letter-spacing:-0.3px" id="sb-credits-val">—</span>
+    <!-- Bouton -->
+    <button onclick="switchView('credits',null)" style="margin-left:auto;background:rgba(28,84,240,0.15);border:1px solid rgba(28,84,240,0.25);color:rgba(100,140,255,0.8);font-size:10px;font-weight:600;padding:3px 8px;border-radius:4px;cursor:pointer;font-family:inherit;transition:all .15s;letter-spacing:0.2px;white-space:nowrap" onmouseover="this.style.background='rgba(28,84,240,0.3)';this.style.color='#fff'" onmouseout="this.style.background='rgba(28,84,240,0.15)';this.style.color='rgba(100,140,255,0.8)'">+ Recharger</button>
+  </div>
+</div>
+
+
+
+
     <div class="prog-wrap">
       <div class="prog-label-row">
         <span class="prog-label">Taux de contact</span>
@@ -1038,8 +1086,14 @@ a{color:inherit}
       <div id="users-list"></div>
     </div>
   </div>
+<!-- AFFILIATION VIEW -->
+<div class="view-page" id="view-affiliation" style="display:none"></div>
+  <!-- CREDITS VIEW -->
+<div class="view-page" id="view-credits" style="display:none"></div>
 </div><!-- /main -->
 </div><!-- /app -->
+
+
 
 <!-- CONTACT MODAL -->
 <div class="modal-overlay" id="add-modal">
@@ -1226,7 +1280,7 @@ const SK_TEAMS='pf6_teams';
 const SK_EMAILS='pf6_emails';
 
 // ══ STATE ══
-let contacts=[],users=[],agenda=[],blocked=[],activity=[],messages=[],rdvList=[],teams=[],sentEmails=[];
+let contacts=[],users=[],agenda=[],blocked=[],activity=[],messages=[],rdvList=[],teams=[],sentEmails=[],affiliateData=null;
 let currentUser=null,selectedId=null,currentNicheFilter='all',currentTagFilter=null;
 let editingId=null,selectedTags=[];
 let scanResults=[],targetBatch=10,scanAborted=false;
@@ -1806,20 +1860,60 @@ function doLogout(){
   document.getElementById('login-err').style.display='none';
 }
 function checkSession(){try{const s=sessionStorage.getItem(SK_SESSION);if(s){currentUser=JSON.parse(s);return true;}}catch(e){}return false;}
-function initApp(){
+async function initApp(){
   document.getElementById('sb-av').textContent=(currentUser.name||'?')[0].toUpperCase();
   document.getElementById('sb-name').textContent=currentUser.name||currentUser.login;
   const roleLabels={admin:'Administrateur',setter:'Setter',closer:'Closer',user:'Utilisateur'};
   document.getElementById('sb-role').textContent=roleLabels[currentUser.role]||'Utilisateur';
   document.querySelectorAll('.admin-only').forEach(el=>el.style.display=(currentUser.role==='admin'||currentUser.role==='superadmin')?'':'none');
+  // Charger les crédits
+  refreshCreditsDisplay();
   // Le superadmin voit "Équipes" à la place de "Utilisateurs"
   const navUsersLabel=document.querySelector('#nav-users .nav-ic + span')||document.getElementById('nav-users');
   if(navUsersLabel&&isSuperAdmin()){
     // Changer le libellé dans la nav
     document.getElementById('nav-users').innerHTML=document.getElementById('nav-users').innerHTML.replace('Utilisateurs','Équipes');
   }
-  if(currentUser.role==='closer')switchView('rdv',document.getElementById('nav-rdv'));
-  renderAll();checkWAStatus();
+    if(currentUser.role==='closer')switchView('rdv',document.getElementById('nav-rdv'));
+      // Vérifier retour Stripe
+  const _params = new URLSearchParams(window.location.search);
+if(_params.get('payment')==='success'){
+    const _planId   = _params.get('planId');
+    const _amount   = _params.get('amount');
+    const _credits  = _params.get('credits');
+    const _teamId   = _params.get('teamId');
+    const _userId   = _params.get('userId');
+    window.history.replaceState({},'','/');
+    if(_teamId){
+      try{
+        await fetch('/stripe/confirm',{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            planId:  _planId  || null,
+            amount:  _amount  || null,
+            credits: _credits ? parseInt(_credits) : null,
+            teamId:  _teamId,
+            userId:  _userId
+          })
+        });
+        const _label = _planId
+          ? ({starter:'Starter (250)',pro:'Pro (500)',business:'Business (1500)'}[_planId] || _planId)
+          : `${parseInt(_credits||0).toLocaleString('fr-FR')} crédits`;
+        await refreshCreditsDisplay();
+// Récupère le solde mis à jour pour l'afficher dans la popup
+const _cr = await fetch('/credits/status?teamId='+_teamId).then(r=>r.json()).catch(()=>null);
+const _totalBal   = _cr?.credits?.balance || 0;
+const _addedCount = _credits ? parseInt(_credits) : (PLANS[_planId]?.credits || 0);
+showCreditsSuccess(_addedCount, _totalBal);
+      }catch(e){console.warn('Confirm stripe err:',e);}
+    }
+  } else if(_params.get('payment')==='cancel'){
+    window.history.replaceState({},'','/');
+    showToast('Paiement annulé',false);
+  }
+  renderAll();checkWAStatus();initAffiliate();
+
+
 }
 
 // ══ UTILS ══
@@ -2262,6 +2356,25 @@ async function scanWithAI(){
   if(!ville){showAlert('Veuillez saisir une ville ou zone géographique.','warn');return;}
   const activeSrcs=getActiveSrcs();if(!activeSrcs.length){showAlert('Activez au moins une source.','warn');return;}
   try{const h=await fetch('/health');if(!h.ok)throw new Error();}catch(e){showAlert('Proxy Node.js inaccessible. Veuillez démarrer server.js sur le port 3000.','warn');return;}
+
+  // ── VÉRIFICATION CRÉDITS ──
+  const tid=getTeamId();
+  if(!isSuperAdmin()&&tid){
+    const cr=await fetch('/credits/status?teamId='+tid).then(r=>r.json()).catch(()=>null);
+    if(cr&&cr.credits){
+      const bal=cr.credits.balance||0;
+      const plan=cr.credits.plan||'free';
+      if(plan!=='agency'&&bal<=0){
+        showAlert(`❌ Vous n'avez plus de crédits disponibles. <a href="#" onclick="openRechargeModal();return false;" style="color:var(--blue);font-weight:600;text-decoration:underline">Recharger maintenant →</a>`,'warn');
+        return;
+      }
+      if(plan!=='agency'&&bal<targetBatch){
+        showAlert(`⚠️ Attention : vous avez <strong>${bal} crédit(s)</strong> disponibles. Le scan sera limité à ${bal} prospect(s). <a href="#" onclick="openRechargeModal();return false;" style="color:var(--blue);font-weight:600">Recharger →</a>`,'info');
+        // On continue mais on limite targetBatch
+        targetBatch=Math.min(targetBatch,bal);
+      }
+    }
+  }
   scanAborted=false;scanResults=[];
   document.getElementById('results-list').innerHTML='';document.getElementById('scan-alert').innerHTML='';
   document.getElementById('scan-log').innerHTML='';document.getElementById('scan-log').style.display='none';
@@ -2336,9 +2449,21 @@ async function scanWithAI(){
   }
   // ── FIN BOUCLE ──
 
-  document.getElementById('btn-stop').style.display='none';btn.disabled=false;btn.textContent='Lancer le scan';
+document.getElementById('btn-stop').style.display='none';btn.disabled=false;btn.textContent='Lancer le scan';
   setProgress(100,`Terminé — ${scanResults.length}/${targetBatch} leads`);
   if(!scanResults.length){showAlert('Aucun résultat. Vérifiez la configuration du proxy et la clé API.','warn');return;}
+
+  // ── CONSOMMER LES CRÉDITS ──
+  const tidC=getTeamId();
+  if(!isSuperAdmin()&&tidC&&scanResults.length>0){
+    try{
+      await fetch('/credits/consume',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({teamId:tidC,count:scanResults.length})
+      });
+      await refreshCreditsDisplay();
+    }catch(e){console.warn('Erreur consommation crédits:',e);}
+  }
   const wP=scanResults.filter(r=>r.phone).length,wE=scanResults.filter(r=>r.email).length,wS=scanResults.filter(r=>r.website).length,wD=scanResults.filter(r=>r.dirigeant).length;
   const achieved=scanResults.length>=targetBatch;
   showAlert(`${achieved?'✅':'⚠️'} ${scanResults.length} contacts trouvés${achieved?' (objectif atteint)':` — objectif : ${targetBatch}`} · ${wP} téléphones · ${wE} emails · ${wS} sites web · ${wD} dirigeants`,'ok');
@@ -3091,7 +3216,7 @@ function goContact(id){switchView('contacts',document.getElementById('nav-contac
 function switchView(view,el){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   if(el)el.classList.add('active');
-['contacts','scanner','pipeline','agenda','blocked','stats','users','rdv','emails'].forEach(v=>{
+['contacts','scanner','pipeline','agenda','blocked','stats','users','rdv','emails','affiliation','credits'].forEach(v=>{
     const ev=document.getElementById('view-'+v);if(ev)ev.style.display='none';
   });
   const show=document.getElementById('view-'+view);
@@ -3101,7 +3226,7 @@ function switchView(view,el){
     else show.style.display='block';
   }
   document.getElementById('search-wrap').style.display=view==='contacts'?'':'none';
-  document.getElementById('view-title').textContent={contacts:'Contacts',scanner:'Prospection automatisée',pipeline:'Pipeline commercial',agenda:'Agenda & Rappels',blocked:'Non intéressés',stats:'Statistiques',users:'Utilisateurs',rdv:'Rendez-vous',emails:'Emails envoyés'}[view]||view;
+  document.getElementById('view-title').textContent={contacts:'Contacts',scanner:'Prospection automatisée',pipeline:'Pipeline commercial',agenda:'Agenda & Rappels',blocked:'Non intéressés',stats:'Statistiques',users:'Utilisateurs',rdv:'Rendez-vous',emails:'Emails envoyés',affiliation:'Programme d\'Affiliation',credits:'Recharger des crédits'}[view]||view;
 
   if(view==='pipeline')renderPipeline();
   if(view==='agenda')renderAgenda();
@@ -3110,6 +3235,8 @@ function switchView(view,el){
   if(view==='users')renderUsers();
 if(view==='rdv')renderRdv();
   if(view==='emails')renderEmailView();
+  if(view==='affiliation')renderAffiliationView();
+if(view==='credits')renderCreditsView();
 }
 function renderFilterChips(){
   const map={};contacts.forEach(c=>{map[c.niche]=(map[c.niche]||0)+1});
@@ -3118,7 +3245,8 @@ function renderFilterChips(){
     Object.keys(map).map(n=>`<span class="chip${currentNicheFilter===n?' active':''}" onclick="setFilter('${n.replace(/'/g,"\\'")}')">` +n.split('/')[0].split(' ').slice(0,2).join(' ')+'</span>').join('');
 }
 function renderNicheNav(){
-  const map={};contacts.forEach(c=>{map[c.niche]=(map[c.niche]||0)+1});
+  const tid=getTeamId();
+  const map={};contacts.filter(c=>isSuperAdmin()||(c.teamId===tid)).forEach(c=>{map[c.niche]=(map[c.niche]||0)+1});
   document.getElementById('niche-nav').innerHTML=Object.entries(map).map(([n,cnt])=>
     `<div class="nav-item" onclick="setFilter('${n.replace(/'/g,"\\'")}')">
       <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;font-size:12px">${n}</span>
@@ -3129,28 +3257,30 @@ function setFilter(n){currentNicheFilter=n;currentTagFilter=null;renderFilterChi
 function quickFilter(t){currentTagFilter=currentTagFilter===t?null:t;currentNicheFilter='all';switchView('contacts',document.getElementById('nav-contacts'));renderFilterChips();renderList();}
 
 function updateStats(){
-  const total=contacts.length;
+const tid=getTeamId();
+const total=contacts.filter(c=>isSuperAdmin()||(c.teamId===tid)).length;
   document.getElementById('nc-total').textContent=total;
   document.getElementById('nc-pipeline').textContent=contacts.filter(c=>['interested','quote'].includes(c.status)).length;
-  const h=contacts.filter(c=>(c.tags||[]).includes('Chaud')).length;
-  const q=contacts.filter(c=>c.status==='quote').length;
+const visibleContacts=contacts.filter(c=>isSuperAdmin()||(c.teamId===tid));
+const h=visibleContacts.filter(c=>(c.tags||[]).includes('Chaud')).length;
+const q=visibleContacts.filter(c=>c.status==='quote').length;
   document.getElementById('s1').textContent=total;document.getElementById('s2').textContent=h;document.getElementById('s3').textContent=q;
   const cutoff7=new Date();cutoff7.setDate(cutoff7.getDate()-7);
   const wa7=messages.filter(m=>m.sentDate>=cutoff7.toISOString().split('T')[0]).length;
   document.getElementById('s4').textContent=wa7;
-  document.getElementById('nc-hot').textContent=h;
-  document.getElementById('nc-recall').textContent=contacts.filter(c=>(c.tags||[]).includes('Rappeler')).length;
-  document.getElementById('nc-nosite').textContent=contacts.filter(c=>(c.tags||[]).includes('Pas de site')).length;
-  document.getElementById('nc-devis').textContent=q;
-  document.getElementById('nc-blocked').textContent=blocked.length;
-  document.getElementById('nc-agenda').textContent=agenda.filter(e=>!e.done&&e.date>=today()).length;
+document.getElementById('nc-hot').textContent=visibleContacts.filter(c=>(c.tags||[]).includes('Chaud')).length;
+document.getElementById('nc-recall').textContent=visibleContacts.filter(c=>(c.tags||[]).includes('Rappeler')).length;
+document.getElementById('nc-nosite').textContent=visibleContacts.filter(c=>(c.tags||[]).includes('Pas de site')).length;
+document.getElementById('nc-devis').textContent=q;
+document.getElementById('nc-blocked').textContent=blocked.length;
+document.getElementById('nc-agenda').textContent=agenda.filter(e=>!e.done&&e.date>=today()).length;
 document.getElementById('nc-rdv').textContent=rdvList.filter(r=>r.status==='pending').length;
-  document.getElementById('nc-emails').textContent=sentEmails.length;
-  document.getElementById('sb-wa-count').textContent=messages.length;
-  const called=contacts.filter(c=>c.status!=='new').length;
-  const pct=total?Math.round(called/total*100):0;
-  document.getElementById('prog').style.width=pct+'%';
-  document.getElementById('prog-label').textContent=`${called} / ${total}`;
+document.getElementById('nc-emails').textContent=sentEmails.length;
+document.getElementById('sb-wa-count').textContent=messages.length;
+const called=visibleContacts.filter(c=>c.status!=='new').length;
+const pct=total?Math.round(called/total*100):0;
+document.getElementById('prog').style.width=pct+'%';
+document.getElementById('prog-label').textContent=`${called} / ${total}`;
 }
 
 // ══ CRUD ══
@@ -3239,8 +3369,269 @@ function copyPhones(){
 
 function renderAll(){updateStats();renderNicheNav();renderFilterChips();renderList();}
 
+// ══ CRÉDITS ══
+let _currentCredits = null;
+let _selectedRechargePlan = null;
+
+async function refreshCreditsDisplay(){
+  const tid = getTeamId();
+  if(!tid || isSuperAdmin()){
+    document.getElementById('sb-credits-val').textContent = '∞';
+    document.getElementById('sb-plan-label').textContent = 'SuperAdmin';
+    document.getElementById('sb-credits-bar').style.width = '100%';
+    return;
+  }
+  try{
+    const r = await fetch('/credits/status?teamId='+tid);
+    const d = await r.json();
+    if(!d.ok) return;
+    _currentCredits = d.credits;
+    const bal = d.credits.balance || 0;
+    const plan = d.credits.plan || 'free';
+    const total = d.credits.totalBought || 15;
+    const planLabels = {free:'Gratuit',starter:'Starter',pro:'Pro',business:'Business',agency:'Agence',pending:'En attente'};
+    document.getElementById('sb-credits-val').textContent = plan==='agency'?'∞':bal.toLocaleString('fr-FR');
+    document.getElementById('sb-plan-label').textContent = planLabels[plan]||plan;
+    const pct = plan==='agency'?100:Math.min(100,Math.round(bal/Math.max(total,1)*100));
+    document.getElementById('sb-credits-bar').style.width = pct+'%';
+    document.getElementById('sb-credits-bar').style.background = bal<=5?'var(--red)':bal<=20?'var(--amber)':'var(--blue)';
+  }catch(e){console.warn('Credits display error:',e);}
+}
+
+function openRechargeModal(){
+  switchView('credits',null);
+}
+
+function renderCreditsView(){
+  rechargeUpdate(_rechargeAmount||100);
+  const tid=getTeamId();
+  const bal=_currentCredits?.balance||0;
+  const plan=_currentCredits?.plan||'free';
+  const planLabels={free:'Gratuit',starter:'Starter',pro:'Pro',business:'Business',agency:'Agence'};
+  const el=document.getElementById('view-credits');
+  el.innerHTML=`
+  <div style="max-width:900px;margin:0 auto">
+
+    <div class="page-header" style="margin-bottom:28px">
+      <div>
+        <div class="page-title">Recharger des crédits</div>
+        <div class="page-sub">1 crédit = 1 prospect trouvé · Les crédits n'expirent jamais · Paiement sécurisé Stripe</div>
+      </div>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+        <div style="text-align:right">
+          <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;font-weight:600">Solde actuel</div>
+          <div style="font-size:28px;font-weight:300;letter-spacing:-1px;color:var(--blue);font-variant-numeric:tabular-nums">${plan==='agency'?'∞':bal.toLocaleString('fr-FR')} <span style="font-size:13px;color:var(--text3);font-weight:400">crédits</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 360px;gap:20px;align-items:start">
+
+      <div>
+        <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius-xl);padding:22px;margin-bottom:14px">
+          <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:14px">Choisir un montant</div>
+
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px" id="cr-presets">
+            ${[
+              {val:10,credits:100,label:'Découverte',bonus:0},
+              {val:50,credits:550,label:'Starter',bonus:10},
+              {val:100,credits:1200,label:'Standard',bonus:20,popular:true},
+              {val:250,credits:3250,label:'Pro',bonus:30},
+              {val:500,credits:7000,label:'Growth',bonus:40},
+              {val:1000,credits:15000,label:'Scale',bonus:50}
+            ].map(p=>`
+              <div class="batch-card${p.val===(_rechargeAmount||100)?' selected':''}" data-val="${p.val}" onclick="rechargePick(this,${p.val})" style="position:relative;padding:14px 12px;text-align:left">
+                ${p.popular?`<div style="position:absolute;top:0;right:0;font-size:9px;font-weight:700;padding:2px 8px;background:var(--blue);color:#fff;border-radius:0 var(--radius) 0 var(--radius);letter-spacing:0.3px">POPULAIRE</div>`:''}
+                ${p.bonus>0?`<div style="position:absolute;top:0;left:0;font-size:9px;font-weight:700;padding:2px 8px;background:var(--green-lt);color:var(--green);border-radius:var(--radius) 0 var(--radius) 0;letter-spacing:0.3px">+${p.bonus}% offert</div>`:''}
+                <div style="font-size:11px;color:var(--text3);margin-bottom:4px;margin-top:${p.bonus>0||p.popular?'10px':'0'}">${p.label}</div>
+                <div style="font-size:22px;font-weight:300;letter-spacing:-0.8px;color:var(--text)">${p.val}€</div>
+                <div style="font-size:12px;color:var(--blue);font-weight:600;margin-top:3px">${p.credits.toLocaleString('fr-FR')} crédits</div>
+                <div style="font-size:11px;color:var(--text3);margin-top:2px">${(p.val/p.credits).toFixed(3).replace('.',',')}€ / lead</div>
+              </div>`).join('')}
+          </div>
+
+          <div style="border-top:1px solid var(--border);padding-top:16px">
+            <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:10px">Montant libre</div>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+              <input type="range" id="recharge-slider" min="10" max="2000" step="10" value="${_rechargeAmount||100}" oninput="rechargeUpdate(parseInt(this.value))" style="flex:1;accent-color:var(--blue)"/>
+              <div style="display:flex;align-items:center;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;flex-shrink:0">
+                <input type="number" id="cr-custom-input" min="10" max="20000" value="${_rechargeAmount||100}" oninput="rechargeUpdate(parseInt(this.value)||10)" style="width:80px;padding:7px 10px;border:none;font-size:14px;font-weight:600;font-family:var(--font);outline:none;text-align:right;background:transparent;color:var(--text)"/>
+                <span style="padding:0 10px;font-size:13px;color:var(--text3);background:var(--surface);height:100%;display:flex;align-items:center;border-left:1px solid var(--border)">€</span>
+              </div>
+            </div>
+            <div id="cr-bonus-bar" style="display:none;background:var(--green-lt);border:1px solid rgba(14,159,110,0.2);border-radius:var(--radius);padding:8px 12px;font-size:12px;color:var(--green);margin-top:8px">
+              <span id="cr-bonus-txt"></span>
+            </div>
+            <div id="cr-next-tier" style="font-size:12px;color:var(--text3);margin-top:6px"></div>
+          </div>
+        </div>
+
+        <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius-xl);padding:18px">
+          <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:12px">Pourquoi recharger ?</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            ${[
+              {icon:'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z',color:'var(--amber)',title:'Données vérifiées',desc:'Téléphone, email, site web et dirigeant pour chaque prospect'},
+              {icon:'M13 2 3 14h9l-1 8 10-12h-9z',color:'var(--blue)',title:'Extraction en temps réel',desc:'Données fraîches depuis 9 sources simultanées'},
+              {icon:'M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.99 12',color:'var(--green)',title:'Crédits permanents',desc:'Pas d\'expiration, pas d\'abonnement forcé'},
+              {icon:'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z',color:'var(--teal)',title:'Paiement sécurisé',desc:'Stripe — données bancaires jamais stockées'}
+            ].map(f=>`
+              <div style="display:flex;align-items:flex-start;gap:9px;padding:10px;background:var(--surface);border-radius:var(--radius)">
+                <div style="width:28px;height:28px;border-radius:6px;background:${f.color === 'var(--amber)' ? 'var(--amber-lt)' : f.color === 'var(--blue)' ? 'var(--blue-lt)' : f.color === 'var(--green)' ? 'var(--green-lt)' : 'var(--teal-lt)'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${f.color}" stroke-width="2"><path d="${f.icon}"/></svg>
+                </div>
+                <div>
+                  <div style="font-size:12.5px;font-weight:600;color:var(--text)">${f.title}</div>
+                  <div style="font-size:11.5px;color:var(--text3);margin-top:2px;line-height:1.5">${f.desc}</div>
+                </div>
+              </div>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <div style="position:sticky;top:16px">
+        <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--shadow)">
+          <div style="background:var(--blue);padding:16px 20px">
+            <div style="font-size:11px;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;margin-bottom:8px">Récapitulatif</div>
+            <div style="display:flex;align-items:baseline;gap:6px">
+              <span style="font-size:38px;font-weight:300;color:#fff;letter-spacing:-1.5px;font-variant-numeric:tabular-nums" id="cr-sum-credits">1 200</span>
+              <span style="font-size:14px;color:rgba(255,255,255,0.6)">crédits</span>
+            </div>
+            <div id="cr-sum-bonus" style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:4px"></div>
+          </div>
+
+          <div style="padding:18px 20px">
+            <div style="display:flex;justify-content:space-between;font-size:13px;padding:7px 0;border-bottom:1px solid var(--border)">
+              <span style="color:var(--text3)">Montant</span>
+              <span style="font-weight:600" id="cr-sum-amt">100€</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;padding:7px 0;border-bottom:1px solid var(--border)">
+              <span style="color:var(--text3)">Crédits de base</span>
+              <span id="cr-sum-base">1 000</span>
+            </div>
+            <div id="cr-sum-bonus-row" style="display:flex;justify-content:space-between;font-size:13px;padding:7px 0;border-bottom:1px solid var(--border);color:var(--green)">
+              <span>Bonus inclus</span>
+              <span id="cr-sum-bonus-val">+200</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;padding:7px 0;border-bottom:1px solid var(--border)">
+              <span style="color:var(--text3)">Prix par prospect</span>
+              <span id="cr-sum-per">0,083€</span>
+            </div>
+
+            <button class="btn btn-primary" id="rch-cta" onclick="launchRechargeStripe()" style="width:100%;justify-content:center;padding:14px;font-size:14px;margin-top:14px;letter-spacing:0.2px">
+              Payer et obtenir mes crédits →
+            </button>
+
+            <div style="display:flex;justify-content:center;gap:14px;margin-top:12px">
+              <span style="font-size:11px;color:var(--text3);display:inline-flex;align-items:center;gap:4px">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                Stripe sécurisé
+              </span>
+              <span style="font-size:11px;color:var(--text3);display:inline-flex;align-items:center;gap:4px">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                Sans engagement
+              </span>
+            </div>
+
+            <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);font-size:12px;color:var(--text3);text-align:center;line-height:1.6">
+              Besoin de milliers de leads par mois ?<br>
+              <a href="#" onclick="contactAgency();return false" style="color:var(--blue);font-weight:600;text-decoration:none">Découvrez l'offre Agence →</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>`;
+
+  document.getElementById('recharge-slider').addEventListener('input',function(){
+    document.getElementById('cr-custom-input').value=this.value;
+  });
+  rechargeUpdateCreditView(_rechargeAmount||100);
+}
+
+function rechargeUpdateCreditView(amt){
+  _rechargeAmount=amt;
+  const credits=rechargeCalcCredits(amt);
+  const baseCredits=Math.round((amt/10)*100);
+  const bonusCredits=credits-baseCredits;
+  const per=(amt/credits).toFixed(3).replace('.',',');
+  const tier=RECHARGE_TIERS.find(t=>amt>=t.min&&amt<=t.max)||RECHARGE_TIERS[RECHARGE_TIERS.length-1];
+
+  const setSafe=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  setSafe('cr-sum-credits',credits.toLocaleString('fr-FR'));
+  setSafe('cr-sum-amt',amt+'€');
+  setSafe('cr-sum-base',baseCredits.toLocaleString('fr-FR'));
+  setSafe('cr-sum-per',per+'€');
+  if(bonusCredits>0){
+    setSafe('cr-sum-bonus-val','+'+bonusCredits.toLocaleString('fr-FR'));
+    setSafe('cr-sum-bonus',`${Math.round(tier.bonus*100)}% de bonus appliqué`);
+    const br=document.getElementById('cr-sum-bonus-row');if(br)br.style.display='flex';
+    const bb=document.getElementById('cr-bonus-bar');
+    if(bb){bb.style.display='block';document.getElementById('cr-bonus-txt').textContent=`${Math.round(tier.bonus*100)}% de bonus — ${bonusCredits.toLocaleString('fr-FR')} crédits offerts`;}
+  }else{
+    const br=document.getElementById('cr-sum-bonus-row');if(br)br.style.display='none';
+    const bb=document.getElementById('cr-bonus-bar');if(bb)bb.style.display='none';
+    setSafe('cr-sum-bonus','');
+  }
+  const cta=document.getElementById('rch-cta');
+  if(cta)cta.textContent=`Payer ${amt}€ et obtenir ${credits.toLocaleString('fr-FR')} crédits →`;
+  const slider=document.getElementById('recharge-slider');if(slider)slider.value=amt;
+  const inp=document.getElementById('cr-custom-input');if(inp)inp.value=amt;
+  document.querySelectorAll('#cr-presets .batch-card').forEach(c=>c.classList.toggle('selected',parseInt(c.dataset.val)===amt));
+  const next=RECHARGE_TIERS.find(t=>t.min>amt);
+  const ntEl=document.getElementById('cr-next-tier');
+  if(ntEl&&next){const diff=next.min-amt;ntEl.textContent=`+${diff}€ → palier ${Math.round(next.bonus*100)}% de bonus`;}
+  else if(ntEl)ntEl.textContent='';
+}
+
+
+function selectRechargePlan(planId, el){
+  _selectedRechargePlan = planId;
+  document.querySelectorAll('[id^="rplan-"]').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('recharge-pay-btn').disabled = false;
+}
+
+function contactAgency(){
+  closeModals();
+  window.open('https://wa.me/33759536475?text='+encodeURIComponent('Bonjour, je suis intéressé par l\'offre Agence PushProspect (leads illimités). Pouvez-vous me donner plus d\'informations ?'),'_blank');
+}
+
+async function launchRechargeStripe(){
+  if(!_rechargeAmount||_rechargeAmount<10){showToast('Montant minimum : 10€',false);return;}
+  const tid = getTeamId();
+  if(!tid&&!isSuperAdmin()){showToast('Équipe introuvable',false);return;}
+  const btn = document.getElementById('rch-cta');
+  btn.disabled = true; btn.textContent = 'Redirection vers Stripe…';
+  try{
+    const r = await fetch('/stripe/create-session',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+body: JSON.stringify({
+  amount: _rechargeAmount,
+  credits: rechargeCalcCredits(_rechargeAmount),
+  teamId: tid,
+  userId: currentUser?.id || null,
+  planId: null
+})
+    });
+    const d = await r.json();
+    if(!r.ok||!d.url){
+      showToast(d.error||'Erreur Stripe',false);
+      btn.disabled=false;
+      btn.textContent=`Payer ${_rechargeAmount}€ et obtenir ${rechargeCalcCredits(_rechargeAmount).toLocaleString('fr-FR')} crédits →`;
+      return;
+    }
+    window.location.href = d.url;
+  }catch(e){
+    showToast('Erreur : '+e.message,false);
+    btn.disabled=false;
+    btn.textContent=`Payer ${_rechargeAmount}€ et obtenir ${rechargeCalcCredits(_rechargeAmount).toLocaleString('fr-FR')} crédits →`;
+  }
+}
+
 // ══ INIT ══
 (async()=>{
+  
   await load();
   if(checkSession()){
     document.getElementById('login-screen').style.display='none';
@@ -3248,6 +3639,39 @@ function renderAll(){updateStats();renderNicheNav();renderFilterChips();renderLi
     initApp();
   }
 })();
+
+
+const RECHARGE_TIERS=[
+  {min:10,max:49,bonus:0},
+  {min:50,max:99,bonus:0.10},
+  {min:100,max:249,bonus:0.20},
+  {min:250,max:499,bonus:0.30},
+  {min:500,max:999,bonus:0.40},
+  {min:1000,max:4999,bonus:0.50},
+  {min:5000,max:20000,bonus:0.67}
+];
+let _rechargeAmount=10;
+
+function rechargeCalcCredits(amt){
+  const t=RECHARGE_TIERS.find(t=>amt>=t.min&&amt<=t.max)||RECHARGE_TIERS[RECHARGE_TIERS.length-1];
+  return Math.round((amt/10)*100*(1+t.bonus));
+}
+function rechargePick(el,val){
+  rechargeUpdate(val);
+}
+function rechargeUpdate(amt){
+  _rechargeAmount=amt;
+  rechargeUpdateCreditView(amt);
+  const credits=rechargeCalcCredits(amt);
+  const per=(amt/credits).toFixed(3).replace('.',',');
+  const setSafe=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  setSafe('rch-amt-disp',amt+'€');
+  setSafe('rch-sum-amt',amt+'€');
+  setSafe('rch-sum-credits',credits.toLocaleString('fr-FR'));
+  setSafe('rch-sum-per',per+'€');
+  const cta=document.getElementById('rch-cta');if(cta)cta.textContent=`Payer ${amt}€ et obtenir ${credits.toLocaleString('fr-FR')} crédits →`;
+  const slider=document.getElementById('recharge-slider');if(slider)slider.value=amt;
+}
 </script>
 
 <!-- EMAIL BLAST MODAL -->
@@ -3344,7 +3768,7 @@ function renderAll(){updateStats();renderNicheNav();renderFilterChips();renderLi
 <div id="chat-bubble" onclick="toggleChat()" style="
   position:fixed;bottom:22px;right:22px;width:52px;height:52px;
   background:#1C54F0;border-radius:50%;display:flex;align-items:center;
-  justify-content:center;cursor:pointer;z-index:9999;
+  justify-content:center;cursor:pointer;z-index:99999;
   box-shadow:0 4px 16px rgba(28,84,240,0.4);
   transition:transform 0.3s cubic-bezier(.34,1.56,.64,1),box-shadow 0.3s ease;
   animation:chat-pulse 2.5s ease-in-out infinite">
@@ -3357,7 +3781,7 @@ function renderAll(){updateStats();renderNicheNav();renderFilterChips();renderLi
   position:fixed;bottom:86px;right:22px;width:350px;height:480px;
   background:#fff;border:1px solid #E2E4EA;border-radius:14px;
   box-shadow:0 12px 40px rgba(0,0,0,0.15);display:none;
-  flex-direction:column;z-index:9998;overflow:hidden">
+  flex-direction:column;z-index:99999;overflow:hidden">
 
   <div style="background:#1C54F0;padding:14px 16px;display:flex;
     align-items:center;justify-content:space-between;flex-shrink:0">
@@ -3472,6 +3896,588 @@ try {
     appendMsg('Erreur de connexion. Appelez le <a href="tel:0759536475" style="color:#1C54F0;font-weight:600">07 59 53 64 75</a>', 'bot');
   }
 }
+// ══ AFFILIATION ══
+async function initAffiliate() {
+  try {
+    const r = await fetch('/affiliate/init', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ userId: currentUser.id })
+    });
+    const d = await r.json();
+    if (d.ok) affiliateData = d.affiliate;
+  } catch(e) {}
+}
+
+async function loadAffiliateStats() {
+  try {
+    const r = await fetch('/affiliate/stats?userId=' + currentUser.id);
+    const d = await r.json();
+    return d;
+  } catch(e) { return null; }
+}
+
+async function renderAffiliationView() {
+  const el = document.getElementById('view-affiliation');
+  el.innerHTML = `<div style="max-width:1000px;margin:0 auto">
+    <div class="page-header"><div class="page-title">Programme d'Affiliation</div></div>
+    <div style="text-align:center;padding:40px;color:var(--text3)">Chargement…</div>
+  </div>`;
+
+  await initAffiliate();
+  const stats = await loadAffiliateStats();
+  if (!stats || !stats.affiliate) {
+    el.innerHTML = `<div style="max-width:1000px;margin:0 auto">
+      <div style="text-align:center;padding:48px;color:var(--red)">Erreur de chargement. Réessayez.</div>
+    </div>`;
+    return;
+  }
+
+  const aff = stats.affiliate;
+  const refLink = `${window.location.origin}/register?ref=${aff.code}`;
+  const balance = (aff.balance || 0).toFixed(2);
+  const totalEarned = (aff.totalEarned || 0).toFixed(2);
+  const referred = stats.referred || [];
+  const totalDeposits = (stats.totalDeposits || 0).toFixed(2);
+  const commission = (stats.commission || 0).toFixed(2);
+
+  // Vérifier éligibilité payout
+  let payoutBlocked = false;
+  let payoutBlockReason = '';
+  if ((aff.balance || 0) < 20) {
+    payoutBlocked = true;
+    payoutBlockReason = `Solde insuffisant — minimum 20€ requis (solde actuel : ${balance}€)`;
+  } else if (aff.lastPayoutRequest) {
+    const last = new Date(aff.lastPayoutRequest);
+    const diff = (Date.now() - last) / (1000 * 60 * 60 * 24);
+    if (diff < 15) {
+      payoutBlocked = true;
+      payoutBlockReason = `Prochain payout disponible dans ${Math.ceil(15 - diff)} jours`;
+    }
+  }
+
+  el.innerHTML = `<div style="max-width:1000px;margin:0 auto">
+    <div class="page-header">
+      <div><div class="page-title">Programme d'Affiliation</div>
+        <div class="page-sub">Gagnez 20% sur chaque rechargement de crédits de vos filleuls</div></div>
+    </div>
+
+    <!-- LIEN D'AFFILIATION -->
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius-xl);padding:22px;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--text)">🔗 Votre lien d'affiliation unique</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;font-size:13px;font-family:var(--mono);color:var(--blue);word-break:break-all">${refLink}</div>
+        <button class="btn btn-primary" onclick="copyAffLink('${refLink}')">Copier</button>
+      </div>
+      <div style="font-size:12px;color:var(--text3);margin-top:10px">Partagez ce lien — chaque équipe qui s'inscrit et recharge des crédits vous rapporte <strong style="color:var(--blue)">20% de commission</strong></div>
+    </div>
+
+    <!-- STATS CARDS -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">
+      <div class="stat-card" style="border-left:3px solid var(--blue)">
+        <div class="stat-card-val" style="color:var(--blue)">${referred.length}</div>
+        <div class="stat-card-lbl">Inscrits via votre lien</div>
+      </div>
+      <div class="stat-card" style="border-left:3px solid var(--teal)">
+        <div class="stat-card-val" style="color:var(--teal)">${totalDeposits}€</div>
+        <div class="stat-card-lbl">Total dépôts générés</div>
+      </div>
+      <div class="stat-card" style="border-left:3px solid var(--green)">
+        <div class="stat-card-val" style="color:var(--green)">${totalEarned}€</div>
+        <div class="stat-card-lbl">Revenus totaux générés</div>
+      </div>
+      <div class="stat-card" style="border-left:3px solid var(--amber)">
+        <div class="stat-card-val" style="color:var(--amber)">${balance}€</div>
+        <div class="stat-card-lbl">Solde disponible</div>
+      </div>
+    </div>
+
+    <!-- PAYOUT + STRIPE -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <!-- PAYOUT -->
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius-xl);padding:20px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:8px">💰 Retrait des gains</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.7">
+          Solde disponible : <strong style="color:var(--green);font-size:16px">${balance}€</strong><br>
+          Minimum : 20€ · Fréquence : tous les 15 jours<br>
+          ${aff.lastPayoutRequest ? `Dernière demande : ${new Date(aff.lastPayoutRequest).toLocaleDateString('fr-FR')}` : 'Aucune demande effectuée'}
+        </div>
+        <button class="btn ${payoutBlocked ? '' : 'btn-primary'}" 
+          onclick="${payoutBlocked ? `showToast('${payoutBlockReason}', false)` : 'requestPayout()'}"
+          style="${payoutBlocked ? 'opacity:.5;cursor:not-allowed' : ''}">
+          ${payoutBlocked ? '⛔ ' + (aff.balance < 20 ? 'Solde insuffisant' : 'Délai non écoulé') : '💸 Demander un payout'}
+        </button>
+        ${payoutBlocked ? `<div style="font-size:11px;color:var(--text3);margin-top:8px">${payoutBlockReason}</div>` : ''}
+      </div>
+
+      <!-- RECHARGE CREDITS -->
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius-xl);padding:20px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:8px">⚡ Recharger des crédits</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.7">
+          300 prospects = 15€<br>
+          Montant libre (minimum 20€)<br>
+          Paiement sécurisé via Stripe
+        </div>
+        <div style="display:flex;gap:7px;margin-bottom:10px;flex-wrap:wrap">
+          <button class="chip" onclick="setRechargeAmount(20)">20€</button>
+          <button class="chip" onclick="setRechargeAmount(50)">50€</button>
+          <button class="chip" onclick="setRechargeAmount(100)">100€</button>
+          <button class="chip" onclick="setRechargeAmount(200)">200€</button>
+        </div>
+        <div style="display:flex;gap:7px;align-items:center">
+          <input id="recharge-amount" class="form-input" type="number" min="20" placeholder="Montant (min 20€)" style="flex:1"/>
+          <button class="btn btn-primary" onclick="launchStripe()">Payer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LISTE DES FILLEULS -->
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius-xl);padding:20px;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:14px">👥 Vos filleuls (${referred.length})</div>
+      ${!referred.length
+        ? `<div style="text-align:center;padding:32px;color:var(--text3);font-size:13px">
+            Aucun inscrit pour l'instant.<br>Partagez votre lien pour commencer !
+          </div>`
+        : referred.map(r => `
+          <div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)">
+            <div style="width:36px;height:36px;border-radius:50%;background:var(--blue-lt);color:var(--blue);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0">${(r.name||'?')[0].toUpperCase()}</div>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:600">${r.name || r.login}</div>
+              <div style="font-size:12px;color:var(--text3)">Inscrit le ${r.createdAt || '—'}</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:13px;font-weight:600;color:var(--teal)">${(r.deposits || 0).toFixed(2)}€ déposé</div>
+              <div style="font-size:11px;color:var(--green)">+${((r.deposits || 0) * 0.20).toFixed(2)}€ commission</div>
+            </div>
+          </div>`).join('')}
+    </div>
+
+    <!-- HISTORIQUE COMMISSIONS -->
+    ${(aff.commissionHistory && aff.commissionHistory.length) ? `
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius-xl);padding:20px;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:14px">📈 Historique des commissions</div>
+      ${aff.commissionHistory.slice(0,20).map(h => `
+        <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12.5px">
+          <div style="flex:1;color:var(--text2)">Dépôt de <strong>${h.from}</strong> — ${h.amount}€</div>
+          <div style="color:var(--green);font-weight:600">+${h.commission}€</div>
+          <div style="color:var(--text3);font-size:11px">${new Date(h.createdAt).toLocaleDateString('fr-FR')}</div>
+        </div>`).join('')}
+    </div>` : ''}
+
+    ${isSuperAdmin() ? renderSuperAdminAffiliates() : ''}
+  </div>`;
+
+  // Vérifier retour Stripe
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('payment') === 'success') {
+    const amount = parseFloat(params.get('amount') || '0');
+    const userId = params.get('userId');
+    const teamId = params.get('teamId');
+    if (amount > 0) {
+      await fetch('/affiliate/deposit', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ userId, teamId, amount, description: 'Rechargement via Stripe' })
+      });
+      showToast(`✅ Paiement de ${amount}€ confirmé ! Crédits rechargés.`, true);
+      window.history.replaceState({}, '', '/');
+    }
+  }
+}
+
+function renderSuperAdminAffiliates() {
+  return `<div style="background:var(--white);border:2px solid var(--amber);border-radius:var(--radius-xl);padding:20px;margin-bottom:16px">
+    <div style="font-size:13px;font-weight:700;margin-bottom:4px;color:var(--amber)">👑 Vue SuperAdmin — Tous les affiliés</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:14px">Vous pouvez réinitialiser le solde d'un affilié après paiement manuel</div>
+    <button class="btn btn-sm" onclick="loadAllAffiliates()" style="margin-bottom:12px">Charger tous les affiliés</button>
+    <div id="all-affiliates-list"></div>
+  </div>`;
+}
+
+async function loadAllAffiliates() {
+  try {
+    const r = await fetch('/db/affiliates');
+    const d = await r.json();
+    const affs = d.data || [];
+    const usersR = await fetch('/db/users');
+    const ud = await usersR.json();
+    const allUsers = ud.data || [];
+
+    const el = document.getElementById('all-affiliates-list');
+    if (!affs.length) { el.innerHTML = '<div style="color:var(--text3);font-size:13px">Aucun affilié</div>'; return; }
+
+    el.innerHTML = affs.map(a => {
+      const u = allUsers.find(x => x.id === a.userId);
+      return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600">${u ? (u.name || u.login) : a.userId}</div>
+          <div style="font-size:11px;color:var(--text3)">Code : ${a.code} · Total gagné : ${(a.totalEarned||0).toFixed(2)}€</div>
+        </div>
+        <div style="font-size:14px;font-weight:700;color:var(--amber)">${(a.balance||0).toFixed(2)}€</div>
+        <button class="btn btn-sm btn-warn" onclick="resetAffBalance('${a.userId}')">Marquer payé</button>
+      </div>`;
+    }).join('');
+  } catch(e) { showToast('Erreur chargement', false); }
+}
+
+async function resetAffBalance(userId) {
+  showConfirm('Marquer comme payé', 'Remettre le solde à 0 après paiement manuel ?', 'Confirmer', 'btn-warn', async () => {
+    try {
+      await fetch('/affiliate/reset-balance', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ userId })
+      });
+      showToast('Solde remis à zéro', true);
+      renderAffiliationView();
+    } catch(e) { showToast('Erreur', false); }
+  });
+}
+
+function copyAffLink(link) {
+  navigator.clipboard.writeText(link)
+    .then(() => showToast('Lien copié !', true))
+    .catch(() => alert(link));
+}
+
+async function requestPayout() {
+  try {
+    const r = await fetch('/affiliate/payout-request', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ userId: currentUser.id })
+    });
+    const d = await r.json();
+    if (!r.ok) { showToast(d.error, false); return; }
+    const msg = `Bonjour Alexis, je souhaite retirer mon solde de ${d.amount}€ (compte : ${currentUser.name || currentUser.login}).`;
+    window.open(`https://wa.me/33759536475?text=${encodeURIComponent(msg)}`, '_blank');
+    showToast('Demande envoyée !', true);
+    setTimeout(renderAffiliationView, 1000);
+  } catch(e) { showToast('Erreur', false); }
+}
+
+function setRechargeAmount(n) {
+  document.getElementById('recharge-amount').value = n;
+}
+
+async function launchStripe() {
+  const amount = parseFloat(document.getElementById('recharge-amount').value);
+  if (!amount || amount < 20) { showToast('Montant minimum : 20€', false); return; }
+  try {
+    const r = await fetch('/stripe/create-session', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ amount, userId: currentUser.id, teamId: currentUser.teamId })
+    });
+    const d = await r.json();
+    if (d.url) window.location.href = d.url;
+    else showToast(d.error || 'Erreur Stripe', false);
+  } catch(e) { showToast('Erreur Stripe : ' + e.message, false); }
+}
 </script>
+<!-- RECHARGE MODAL -->
+<div class="modal-overlay" id="recharge-modal">
+  <div class="modal" style="width:580px;padding:0;overflow:hidden">
+
+<div style="background:var(--blue);padding:16px 22px;display:flex;align-items:center;justify-content:space-between">
+  <div style="display:flex;align-items:center;gap:9px">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff" stroke="none"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+    <div>
+      <div style="font-size:16px;font-weight:700;color:#fff;letter-spacing:-0.3px">Recharger des crédits</div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:2px">1 crédit = 1 prospect · Les crédits n'expirent jamais</div>
+    </div>
+  </div>
+  <button class="btn btn-ghost" onclick="closeModals()" style="color:rgba(255,255,255,0.7);border-color:transparent">✕</button>
+</div>
+
+    <div style="padding:18px 22px">
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:14px" id="recharge-presets">
+        <div class="batch-card" data-val="10" onclick="rechargePick(this,10)">
+  <div class="bc-title">10€</div><div class="bc-desc">100 crédits · 0,10€/lead</div>
+</div>
+<div class="batch-card" data-val="50" onclick="rechargePick(this,50)" style="position:relative;padding-top:20px">
+  <div class="bc-title">50€</div><div class="bc-desc">550 crédits · -9%</div>
+</div>
+<div class="batch-card selected" data-val="100" onclick="rechargePick(this,100)" style="position:relative;padding-top:20px">
+  <div style="position:absolute;top:0;right:0;font-size:9px;font-weight:700;padding:2px 7px;background:rgba(28,84,240,0.12);color:var(--blue);border-radius:0 var(--radius) 0 var(--radius)">Populaire</div>
+  <div class="bc-title">100€</div><div class="bc-desc">1 200 crédits · -17%</div>
+</div>
+        <div class="batch-card" data-val="250" onclick="rechargePick(this,250)">
+          <div class="bc-title">250€</div><div class="bc-desc">3 250 crédits · -23%</div>
+        </div>
+        <div class="batch-card" data-val="500" onclick="rechargePick(this,500)">
+          <div class="bc-title">500€</div><div class="bc-desc">7 000 crédits · -29%</div>
+        </div>
+        <div class="batch-card" data-val="1000" onclick="rechargePick(this,1000)" style="position:relative;padding-top:20px">
+          <div class="bc-title">1 000€</div><div class="bc-desc">15 000 crédits · -33%</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:12px">
+        <label class="form-label">Montant personnalisé</label>
+        <div style="display:flex;align-items:center;gap:10px">
+          <input type="range" id="recharge-slider" min="10" max="5000" step="10" value="10" oninput="rechargeUpdate(parseInt(this.value))" style="flex:1;accent-color:var(--blue)"/>
+          <span style="font-size:16px;font-weight:700;color:var(--blue);min-width:54px;text-align:right" id="rch-amt-disp">10€</span>
+        </div>
+      </div>
+
+<div id="rch-bonus-bar" style="display:none;background:var(--green-lt);border:1px solid rgba(14,159,110,0.25);border-radius:var(--radius);padding:8px 12px;font-size:12px;color:var(--green);margin-bottom:10px;align-items:center;gap:7px">
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>
+  <span id="rch-bonus-txt"></span>
+</div>
+      <div id="rch-next-tier" style="font-size:12px;color:var(--text3);margin-bottom:12px"></div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;background:var(--surface);border-radius:var(--radius-lg);padding:12px">
+        <div style="text-align:center">
+          <div style="font-size:20px;font-weight:300;letter-spacing:-0.5px" id="rch-sum-amt">10€</div>
+          <div style="font-size:11px;color:var(--text3)">Montant</div>
+        </div>
+        <div style="text-align:center;border-left:1px solid var(--border);border-right:1px solid var(--border)">
+          <div style="font-size:20px;font-weight:300;letter-spacing:-0.5px;color:var(--blue)" id="rch-sum-credits">100</div>
+          <div style="font-size:11px;color:var(--text3)">Crédits</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:20px;font-weight:300;letter-spacing:-0.5px" id="rch-sum-per">0,10€</div>
+          <div style="font-size:11px;color:var(--text3)">par lead</div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="rch-cta" onclick="launchRechargeStripe()" style="width:100%;justify-content:center;padding:13px;font-size:14px">
+        Payer 10€ et obtenir 100 crédits →
+      </button>
+
+      <div style="display:flex;justify-content:center;gap:16px;margin-top:10px;flex-wrap:wrap">
+  <span style="font-size:11px;color:var(--text3);display:inline-flex;align-items:center;gap:4px">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    Stripe sécurisé
+  </span>
+  <span style="font-size:11px;color:var(--text3);display:inline-flex;align-items:center;gap:4px">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+    Crédits immédiats
+  </span>
+  <span style="font-size:11px;color:var(--text3);display:inline-flex;align-items:center;gap:4px">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+    Sans engagement
+  </span>
+</div>
+
+    </div>
+  </div>
+</div>
+
+<!-- POPUP CRÉDITS CONFIRMÉS -->
+<div id="credits-success-overlay" style="display:none;position:fixed;inset:0;z-index:99999;align-items:center;justify-content:center;background:rgba(0,0,0,0)">
+  <canvas id="confetti-canvas" style="position:fixed;inset:0;pointer-events:none;z-index:99998"></canvas>
+  <div id="credits-success-card" style="
+    position:relative;z-index:99999;
+    background:#0D0F14;
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:24px;
+    padding:48px 44px 40px;
+    width:420px;max-width:90vw;
+    text-align:center;
+    box-shadow:0 40px 120px rgba(0,0,0,0.8),0 0 0 1px rgba(255,215,0,0.08);
+    transform:scale(0.85) translateY(20px);
+    opacity:0;
+    transition:transform 0.5s cubic-bezier(.34,1.56,.64,1),opacity 0.4s ease;
+    font-family:'IBM Plex Sans',sans-serif;
+  ">
+    <!-- Icône éclair animé -->
+    <div style="position:relative;width:72px;height:72px;margin:0 auto 24px">
+      <div id="csp-ring" style="position:absolute;inset:-8px;border-radius:50%;border:2px solid rgba(255,215,0,0.15);animation:csp-ring-pulse 2s ease-in-out infinite"></div>
+      <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,rgba(255,215,0,0.15),rgba(255,180,0,0.08));border:1px solid rgba(255,215,0,0.25);display:flex;align-items:center;justify-content:center">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="#FFD700" opacity="0.9"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Titre -->
+    <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,215,0,0.6);font-weight:600;margin-bottom:10px">Paiement confirmé</div>
+    <div style="font-size:26px;font-weight:700;color:#fff;letter-spacing:-0.5px;margin-bottom:6px;line-height:1.2">Tes crédits sont arrivés</div>
+    <div style="font-size:13px;color:rgba(255,255,255,0.35);margin-bottom:32px">Disponibles instantanément sur ton compte</div>
+
+    <!-- Compteur de crédits -->
+    <div style="background:rgba(255,215,0,0.05);border:1px solid rgba(255,215,0,0.12);border-radius:16px;padding:24px 20px;margin-bottom:28px">
+      <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,215,0,0.4);margin-bottom:8px">Solde actuel</div>
+      <div style="display:flex;align-items:baseline;justify-content:center;gap:6px">
+        <span id="csp-counter" style="font-size:54px;font-weight:300;letter-spacing:-3px;color:#FFD700;font-variant-numeric:tabular-nums;line-height:1">0</span>
+        <span style="font-size:16px;color:rgba(255,215,0,0.5);font-weight:500">crédits</span>
+      </div>
+      <div id="csp-added" style="font-size:12px;color:rgba(14,159,110,0.8);margin-top:8px;font-weight:600"></div>
+    </div>
+
+    <!-- Upsell -->
+    <div id="csp-upsell" style="background:rgba(28,84,240,0.08);border:1px solid rgba(28,84,240,0.15);border-radius:12px;padding:14px 16px;margin-bottom:24px;text-align:left;display:none">
+      <div style="font-size:11px;color:rgba(100,140,255,0.7);font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px">💡 Astuce</div>
+      <div id="csp-upsell-text" style="font-size:12.5px;color:rgba(255,255,255,0.6);line-height:1.65"></div>
+    </div>
+
+    <!-- Boutons -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button onclick="closeCreditsSuccess()" style="
+        width:100%;padding:14px;
+        background:linear-gradient(135deg,#1C54F0,#1444D0);
+        color:#fff;border:none;border-radius:10px;
+        font-size:14px;font-family:inherit;font-weight:600;
+        cursor:pointer;letter-spacing:0.2px;
+        box-shadow:0 4px 20px rgba(28,84,240,0.4);
+        transition:all .2s;
+      " onmouseover="this.style.boxShadow='0 6px 28px rgba(28,84,240,0.6)';this.style.transform='translateY(-1px)'" 
+         onmouseout="this.style.boxShadow='0 4px 20px rgba(28,84,240,0.4)';this.style.transform='translateY(0)'">
+        Lancer le scanner →
+      </button>
+      <button onclick="openRechargeModal();closeCreditsSuccess()" style="
+        width:100%;padding:12px;
+        background:transparent;
+        color:rgba(255,255,255,0.3);border:1px solid rgba(255,255,255,0.07);border-radius:10px;
+        font-size:13px;font-family:inherit;font-weight:500;
+        cursor:pointer;transition:all .2s;
+      " onmouseover="this.style.color='rgba(255,255,255,0.6)';this.style.borderColor='rgba(255,255,255,0.15)'"
+         onmouseout="this.style.color='rgba(255,255,255,0.3)';this.style.borderColor='rgba(255,255,255,0.07)'">
+        Recharger encore
+      </button>
+    </div>
+
+    <!-- Fermer -->
+    <button onclick="closeCreditsSuccess()" style="
+      position:absolute;top:16px;right:16px;
+      background:rgba(255,255,255,0.05);border:none;border-radius:50%;
+      width:30px;height:30px;cursor:pointer;color:rgba(255,255,255,0.3);
+      font-size:16px;display:flex;align-items:center;justify-content:center;
+      transition:all .2s;
+    " onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.color='rgba(255,255,255,0.7)'"
+       onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.color='rgba(255,255,255,0.3)'">✕</button>
+  </div>
+</div>
+
+<style>
+@keyframes csp-ring-pulse{0%,100%{transform:scale(1);opacity:.5}50%{transform:scale(1.2);opacity:0}}
+@keyframes csp-particle-fall{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+</style>
+
+<script>
+function showCreditsSuccess(addedCredits, totalBalance) {
+  const overlay = document.getElementById('credits-success-overlay');
+  const card    = document.getElementById('credits-success-card');
+  overlay.style.display = 'flex';
+  // Fond qui s'assombrit
+  setTimeout(() => { overlay.style.background = 'rgba(0,0,0,0.75)'; overlay.style.transition = 'background 0.4s ease'; }, 10);
+  // Carte qui apparaît
+  setTimeout(() => { card.style.transform = 'scale(1) translateY(0)'; card.style.opacity = '1'; }, 50);
+
+  // Message ajouté
+  const addedEl = document.getElementById('csp-added');
+  if (addedCredits) addedEl.textContent = `+ ${addedCredits.toLocaleString('fr-FR')} crédits ajoutés`;
+
+  // Upsell contextuel
+  const upsell    = document.getElementById('csp-upsell');
+  const upsellTxt = document.getElementById('csp-upsell-text');
+  if (totalBalance < 100) {
+    upsell.style.display = 'block';
+    upsellTxt.textContent = 'Recharge à 100€ pour obtenir 1 200 crédits — soit 17% de plus. Idéal pour prospecter sans interruption.';
+  } else if (totalBalance < 500) {
+    upsell.style.display = 'block';
+    upsellTxt.textContent = 'Avec 500€ tu obtiens 7 000 crédits et économises 29%. Parfait pour une campagne de prospection intensive.';
+  }
+
+  // Compteur animé
+  const counter = document.getElementById('csp-counter');
+  const start   = Math.max(0, (totalBalance || 0) - (addedCredits || 0));
+  const end     = totalBalance || 0;
+  const duration = 1800;
+  const startTime = performance.now();
+  function animateCounter(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    // Easing ease-out-expo
+    const eased = 1 - Math.pow(2, -10 * progress);
+    const current = Math.round(start + (end - start) * eased);
+    counter.textContent = current.toLocaleString('fr-FR');
+    if (progress < 1) requestAnimationFrame(animateCounter);
+    else {
+      counter.textContent = end.toLocaleString('fr-FR');
+      launchConfetti();
+    }
+  }
+  setTimeout(() => requestAnimationFrame(animateCounter), 300);
+}
+
+function closeCreditsSuccess() {
+  const overlay = document.getElementById('credits-success-overlay');
+  const card    = document.getElementById('credits-success-card');
+  card.style.transform = 'scale(0.9) translateY(10px)';
+  card.style.opacity   = '0';
+  overlay.style.background = 'rgba(0,0,0,0)';
+  setTimeout(() => {
+    overlay.style.display = 'none';
+    card.style.transform  = 'scale(0.85) translateY(20px)';
+    card.style.opacity    = '0';
+    stopConfetti();
+  }, 400);
+}
+
+let _confettiAnim = null;
+let _confettiParticles = [];
+
+function launchConfetti() {
+  const canvas = document.getElementById('confetti-canvas');
+  const ctx    = canvas.getContext('2d');
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const colors = ['#FFD700','#FFC107','#FF8C00','#1C54F0','#ffffff','#00E5FF','#FF6B6B'];
+  _confettiParticles = Array.from({length: 120}, () => ({
+    x: Math.random() * canvas.width,
+    y: -10 - Math.random() * 200,
+    r: 3 + Math.random() * 5,
+    d: 1.5 + Math.random() * 3,
+    color: colors[Math.floor(Math.random() * colors.length)],
+    tilt: Math.random() * 10 - 5,
+    tiltAngle: 0,
+    tiltSpeed: 0.05 + Math.random() * 0.1,
+    shape: Math.random() > 0.5 ? 'rect' : 'circle',
+    w: 6 + Math.random() * 8,
+    h: 4 + Math.random() * 4,
+    opacity: 0.8 + Math.random() * 0.2,
+    spin: (Math.random() - 0.5) * 0.2,
+    angle: Math.random() * Math.PI * 2
+  }));
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    _confettiParticles.forEach(p => {
+      ctx.save();
+      ctx.globalAlpha = p.opacity;
+      ctx.fillStyle = p.color;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.angle);
+      if (p.shape === 'rect') {
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      } else {
+        ctx.beginPath();
+        ctx.arc(0, 0, p.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      p.y += p.d;
+      p.x += Math.sin(p.tiltAngle) * 1.2;
+      p.tiltAngle += p.tiltSpeed;
+      p.angle += p.spin;
+      p.opacity -= 0.003;
+    });
+
+    _confettiParticles = _confettiParticles.filter(p => p.y < canvas.height && p.opacity > 0);
+    if (_confettiParticles.length > 0) _confettiAnim = requestAnimationFrame(draw);
+    else ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  _confettiAnim = requestAnimationFrame(draw);
+}
+
+function stopConfetti() {
+  if (_confettiAnim) cancelAnimationFrame(_confettiAnim);
+  const canvas = document.getElementById('confetti-canvas');
+  if (canvas) canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+  _confettiParticles = [];
+}
+</script>
+
 </body>
 </html>

@@ -2,18 +2,28 @@
 //  PushProspect — Proxy Gemini + Persistance disque + WhatsApp Auto
 //  node server.js
 // ═══════════════════════════════════════════════════════════════════
-
 const http    = require('http');
 const https   = require('https');
 const fs      = require('fs');
 const path    = require('path');
 try { require('dotenv').config(); } catch(e) {}
 
+const HTML = fs.readFileSync('./index.html', 'utf8');
 const API_KEY = process.env.GEMINI_API_KEY;
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 if (!API_KEY) { console.error('❌ GEMINI_API_KEY manquante'); process.exit(1); }
 const PORT = process.env.PORT || 8080;
-const MODEL = 'gemini-2.5-pro';
+const MODEL = 'gemini-2.5-flash';
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || 'sk_test_XXXX';
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
+
+const PLANS = {
+  free:     { id:'free',     name:'Gratuit',       credits: 15,      price: 0,   priceId: null },
+  starter:  { id:'starter',  name:'Starter',       credits: 250,     price: 25,  priceId: 'price_starter' },
+  pro:      { id:'pro',      name:'Pro',            credits: 500,     price: 50,  priceId: 'price_pro' },
+  business: { id:'business', name:'Business',       credits: 1500,    price: 150, priceId: 'price_business' },
+  agency:   { id:'agency',   name:'Agence',         credits: 999999,  price: 0,   priceId: null },
+};
 
 
 const DATA_DIR = path.join(__dirname, 'data');
@@ -28,6 +38,67 @@ const GMAIL_CLIENT_SECRET = process.env.GMAIL_CLIENT_SECRET;
 const GMAIL_REDIRECT_URI  = `http://localhost:${PORT}/gmail/callback`;
 const GMAIL_TOKEN_FILE    = path.join(DATA_DIR, 'gmail_token.json');
 
+// ══ CREDITS ══
+function getTeamCredits(teamId) {
+  const credits = readDB('credits') || [];
+  const entry = credits.find(c => c.teamId === teamId);
+  if (!entry) return null;
+  return entry;
+}
+
+function addCredits(teamId, amount, reason, plan) {
+  const credits = readDB('credits') || [];
+  let entry = credits.find(c => c.teamId === teamId);
+  if (!entry) {
+    entry = { teamId, balance: 0, totalBought: 0, plan: 'free', history: [] };
+    credits.push(entry);
+  }
+  entry.balance = (entry.balance || 0) + amount;
+  entry.totalBought = (entry.totalBought || 0) + amount;
+  if (plan) entry.plan = plan;
+  if (!entry.history) entry.history = [];
+  entry.history.push({
+    type: 'credit', amount, reason: reason || 'Rechargement',
+    date: new Date().toISOString(), balanceAfter: entry.balance
+  });
+  writeDB('credits', credits);
+  return entry;
+}
+
+function consumeCredit(teamId, count) {
+  count = count || 1;
+  const credits = readDB('credits') || [];
+  let entry = credits.find(c => c.teamId === teamId);
+  if (!entry) return { ok: false, error: 'Aucun crédit trouvé' };
+  if (entry.plan === 'agency') return { ok: true, balance: 999999 };
+  if ((entry.balance || 0) < count) return { ok: false, error: 'Crédits insuffisants', balance: entry.balance || 0 };
+  entry.balance -= count;
+  if (!entry.history) entry.history = [];
+  entry.history.push({
+    type: 'debit', amount: -count, reason: `${count} lead(s) scanné(s)`,
+    date: new Date().toISOString(), balanceAfter: entry.balance
+  });
+  writeDB('credits', credits);
+  return { ok: true, balance: entry.balance };
+}
+
+function initFreeCredits(teamId) {
+  const credits = readDB('credits') || [];
+  let entry = credits.find(c => c.teamId === teamId);
+  if (!entry) {
+    entry = {
+      teamId, balance: 15, totalBought: 15, plan: 'free',
+      history: [{
+        type: 'credit', amount: 15, reason: 'Offre gratuite',
+        date: new Date().toISOString(), balanceAfter: 15
+      }]
+    };
+    credits.push(entry);
+    writeDB('credits', credits);
+  }
+  return entry;
+}
+
 function readGmailToken() {
   try { if (fs.existsSync(GMAIL_TOKEN_FILE)) return JSON.parse(fs.readFileSync(GMAIL_TOKEN_FILE, 'utf8')); }
   catch(e) {}
@@ -39,15 +110,19 @@ function saveGmailToken(token) {
 
 // ── DB ──────────────────────────────────────────────────────────────
 const DB_FILES = {
-  contacts : path.join(DATA_DIR, 'contacts.json'),
-  users    : path.join(DATA_DIR, 'users.json'),
-  agenda   : path.join(DATA_DIR, 'agenda.json'),
-  blocked  : path.join(DATA_DIR, 'blocked.json'),
-  activity : path.join(DATA_DIR, 'activity.json'),
-  messages : path.join(DATA_DIR, 'messages.json'),
-  teams    : path.join(DATA_DIR, 'teams.json'),
-  rdv      : path.join(DATA_DIR, 'rdv.json'),
-  emails   : path.join(DATA_DIR, 'emails.json'),
+  contacts    : path.join(DATA_DIR, 'contacts.json'),
+  users       : path.join(DATA_DIR, 'users.json'),
+  agenda      : path.join(DATA_DIR, 'agenda.json'),
+  blocked     : path.join(DATA_DIR, 'blocked.json'),
+  activity    : path.join(DATA_DIR, 'activity.json'),
+  messages    : path.join(DATA_DIR, 'messages.json'),
+  teams       : path.join(DATA_DIR, 'teams.json'),
+  rdv         : path.join(DATA_DIR, 'rdv.json'),
+  emails      : path.join(DATA_DIR, 'emails.json'),
+  affiliates  : path.join(DATA_DIR, 'affiliates.json'),
+  deposits    : path.join(DATA_DIR, 'deposits.json'),
+  payouts     : path.join(DATA_DIR, 'payouts.json'),
+  credits     : path.join(DATA_DIR, 'credits.json'),
 };
 function readDB(key) {
   const defaultSuperAdmin = [{
@@ -211,6 +286,356 @@ function parseBody(req) {
   });
 }
 
+
+function buildRegisterPage(refCode) {
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Créer mon compte — PushProspect</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'IBM Plex Sans',sans-serif;background:#0D0F14;min-height:100vh;color:#fff;padding:40px 20px}
+.bg{position:fixed;inset:0;background:radial-gradient(ellipse 900px 600px at 50% -100px,rgba(28,84,240,0.18) 0%,transparent 70%);pointer-events:none;z-index:0}
+.wrap{position:relative;z-index:1;max-width:960px;margin:0 auto}
+.logo{font-size:22px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:10px}
+.logo-dot{width:8px;height:8px;border-radius:50%;background:#1C54F0;box-shadow:0 0 12px rgba(28,84,240,0.6)}
+.tagline{text-align:center;font-size:13px;color:rgba(255,255,255,0.35);margin-bottom:28px}
+.ref-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(28,84,240,0.12);border:1px solid rgba(28,84,240,0.25);border-radius:6px;padding:6px 14px;font-size:12px;color:rgba(100,140,255,0.9);margin:0 auto 24px;width:fit-content}
+
+.step-indicator{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:32px}
+.step{width:32px;height:32px;border-radius:50%;border:2px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:rgba(255,255,255,0.3);transition:all .3s}
+.step.active{border-color:#1C54F0;color:#1C54F0;background:rgba(28,84,240,0.1)}
+.step.done{background:#1C54F0;border-color:#1C54F0;color:#fff}
+.step-line{flex:1;max-width:60px;height:1px;background:rgba(255,255,255,0.08)}
+.step-labels{display:flex;justify-content:center;gap:8px;margin-top:-20px;margin-bottom:28px}
+.step-lbl{width:32px;text-align:center;font-size:10px;color:rgba(255,255,255,0.25);white-space:nowrap;margin:0 30px}
+
+/* FORM */
+.form-card{background:#1A1D24;border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:32px;max-width:480px;margin:0 auto}
+.form-title{font-size:18px;font-weight:700;margin-bottom:6px;letter-spacing:-0.3px}
+.form-sub{font-size:12px;color:rgba(255,255,255,0.35);margin-bottom:24px;line-height:1.6}
+.field{margin-bottom:14px}
+label{font-size:11px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;display:block;margin-bottom:6px}
+input{width:100%;padding:11px 14px;border:1px solid rgba(255,255,255,0.08);border-radius:7px;font-size:13.5px;font-family:inherit;background:rgba(255,255,255,0.04);color:#fff;outline:none;transition:all .18s}
+input:focus{border-color:rgba(28,84,240,0.6);background:rgba(28,84,240,0.08);box-shadow:0 0 0 3px rgba(28,84,240,0.12)}
+input::placeholder{color:rgba(255,255,255,0.2)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+.btn-next{width:100%;padding:13px;background:#1C54F0;color:#fff;border:none;border-radius:8px;font-size:14px;font-family:inherit;font-weight:600;cursor:pointer;transition:all .18s;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-next:hover{background:#1444D0;box-shadow:0 6px 20px rgba(28,84,240,0.35)}
+.btn-next:disabled{opacity:.5;cursor:not-allowed}
+
+.err-box{background:rgba(220,38,38,0.1);color:#EF4444;border:1px solid rgba(220,38,38,0.25);border-radius:7px;padding:10px 14px;font-size:12px;margin-top:12px;display:none}
+.ok-box{background:rgba(14,159,110,0.1);color:#10B981;border:1px solid rgba(14,159,110,0.25);border-radius:7px;padding:10px 14px;font-size:12px;margin-top:12px;display:none}
+.login-link{text-align:center;font-size:12px;color:rgba(255,255,255,0.3);margin-top:18px}
+.login-link a{color:rgba(100,140,255,0.8);text-decoration:none}
+.login-link a:hover{text-decoration:underline}
+
+/* PLANS */
+.plans-title{text-align:center;font-size:20px;font-weight:700;margin-bottom:6px;letter-spacing:-0.4px}
+.plans-sub{text-align:center;font-size:13px;color:rgba(255,255,255,0.4);margin-bottom:28px}
+.plans-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+@media(max-width:800px){.plans-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.plans-grid{grid-template-columns:1fr}}
+
+.plan-card{background:#1A1D24;border:2px solid rgba(255,255,255,0.07);border-radius:14px;padding:22px 16px 20px;cursor:pointer;transition:all .2s;position:relative;user-select:none}
+.plan-card:hover{border-color:rgba(28,84,240,0.45);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.3)}
+.plan-card.active{border-color:#1C54F0;background:rgba(28,84,240,0.12);box-shadow:0 0 0 1px #1C54F0,0 8px 32px rgba(28,84,240,0.2)}
+.popular-badge{position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:#1C54F0;color:#fff;font-size:10px;font-weight:700;padding:3px 14px;border-radius:20px;white-space:nowrap;letter-spacing:0.5px;box-shadow:0 2px 8px rgba(28,84,240,0.4)}
+.plan-check{position:absolute;top:12px;right:12px;width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:10px;transition:all .2s;background:transparent}
+.plan-card.active .plan-check{background:#1C54F0;border-color:#1C54F0;color:#fff}
+.plan-name{font-size:14px;font-weight:700;color:#fff;margin-bottom:4px}
+.plan-price{font-size:30px;font-weight:300;letter-spacing:-1.5px;color:#fff;line-height:1;margin-bottom:3px}
+.plan-price sup{font-size:15px;font-weight:500;vertical-align:top;margin-top:6px;display:inline-block}
+.plan-price-sub{font-size:11px;color:rgba(255,255,255,0.35);margin-bottom:12px}
+.plan-features{list-style:none;font-size:12px;color:rgba(255,255,255,0.5);line-height:2.1}
+.plan-features li{display:flex;align-items:center;gap:6px}
+.plan-features li::before{content:'✓';color:#1C54F0;font-weight:700;font-size:11px;flex-shrink:0}
+.plan-features li.no::before{content:'✗';color:rgba(255,255,255,0.2)}
+.plan-features li.no{color:rgba(255,255,255,0.2)}
+
+.agency-card{background:linear-gradient(135deg,rgba(124,58,237,0.12),rgba(28,84,240,0.08));border-color:rgba(124,58,237,0.25);max-width:480px;margin:0 auto 24px}
+.agency-card:hover{border-color:rgba(124,58,237,0.55)}
+.agency-card.active{border-color:#7C3AED;box-shadow:0 0 0 1px #7C3AED,0 8px 32px rgba(124,58,237,0.2)}
+.agency-card.active .plan-check{background:#7C3AED;border-color:#7C3AED}
+
+.plan-cta{width:100%;padding:13px;border:none;border-radius:8px;font-size:14px;font-family:inherit;font-weight:600;cursor:pointer;transition:all .18s;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:8px}
+.plan-cta-free{background:rgba(255,255,255,0.08);color:#fff}
+.plan-cta-free:hover{background:rgba(255,255,255,0.13)}
+.plan-cta-paid{background:#1C54F0;color:#fff}
+.plan-cta-paid:hover{background:#1444D0;box-shadow:0 6px 20px rgba(28,84,240,0.35)}
+.plan-cta-wa{background:#128C7E;color:#fff}
+.plan-cta-wa:hover{background:#0a7368}
+.plan-cta:disabled{opacity:.5;cursor:not-allowed}
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="wrap">
+
+  <div class="logo"><div class="logo-dot"></div>PushProspect</div>
+  <div class="tagline">CRM de prospection automatisée · Créez votre espace équipe</div>
+  ${refCode ? `<div style="text-align:center"><div class="ref-badge">🔗 Invitation partenaire · Code : <strong>${refCode}</strong></div></div>` : ''}
+
+  <!-- INDICATEUR ÉTAPES -->
+  <div class="step-indicator">
+    <div class="step active" id="s1">1</div>
+    <div class="step-line"></div>
+    <div class="step" id="s2">2</div>
+    <div class="step-line"></div>
+    <div class="step" id="s3">3</div>
+  </div>
+
+  <!-- ══ ÉTAPE 1 : COMPTE ══ -->
+  <div id="step1">
+    <div class="form-card">
+      <div class="form-title">Créer votre espace</div>
+      <div class="form-sub">Quelques secondes pour configurer votre CRM de prospection</div>
+
+      <div class="field"><label>Nom de votre équipe / agence *</label><input id="teamName" placeholder="Agence XYZ" autocomplete="organization"/></div>
+      <div class="form-grid">
+        <div class="field"><label>Prénom & Nom</label><input id="adminName" placeholder="Jean Dupont" autocomplete="name"/></div>
+        <div class="field"><label>Identifiant *</label><input id="adminLogin" placeholder="jean.dupont" autocomplete="username"/></div>
+      </div>
+      <div class="field"><label>Mot de passe *</label><input id="adminPass" type="password" placeholder="Min. 6 caractères" autocomplete="new-password" onkeydown="if(event.key==='Enter')goToPlans()"/></div>
+
+      <div class="err-box" id="err1"></div>
+      <button class="btn-next" onclick="goToPlans()">
+        Choisir mon offre →
+      </button>
+      <div class="login-link">Déjà un compte ? <a href="/">Se connecter</a></div>
+    </div>
+  </div>
+
+  <!-- ══ ÉTAPE 2 : PLANS ══ -->
+  <div id="step2" style="display:none">
+    <div class="plans-title">Choisissez votre offre</div>
+    <div class="plans-sub">Crédits à vie · Sans abonnement · Rechargez quand vous voulez</div>
+
+    <div class="plans-grid">
+
+      <!-- GRATUIT -->
+      <div class="plan-card" id="pc-free" onclick="selectPlan('free')">
+        <div class="plan-check" id="chk-free"></div>
+        <div class="plan-name">Gratuit</div>
+        <div class="plan-price"><sup>€</sup>0</div>
+        <div class="plan-price-sub">pour toujours</div>
+        <ul class="plan-features">
+          <li>15 crédits offerts</li>
+          <li>Scanner IA</li>
+          <li>CRM complet</li>
+          <li>WhatsApp & Email</li>
+          <li class="no">Recharge possible</li>
+        </ul>
+      </div>
+
+      <!-- STARTER -->
+      <div class="plan-card" id="pc-starter" onclick="selectPlan('starter')">
+        <div class="plan-check" id="chk-starter"></div>
+        <div class="plan-name">Starter</div>
+        <div class="plan-price"><sup>€</sup>25</div>
+        <div class="plan-price-sub">250 crédits · 0,10€/lead</div>
+        <ul class="plan-features">
+          <li>250 crédits</li>
+          <li>Scanner IA</li>
+          <li>CRM complet</li>
+          <li>WhatsApp & Email</li>
+          <li>Recharge possible</li>
+        </ul>
+      </div>
+
+      <!-- PRO — POPULAIRE -->
+      <div class="plan-card" id="pc-pro" onclick="selectPlan('pro')">
+        <div class="popular-badge">⚡ POPULAIRE</div>
+        <div class="plan-check" id="chk-pro"></div>
+        <div class="plan-name">Pro</div>
+        <div class="plan-price"><sup>€</sup>50</div>
+        <div class="plan-price-sub">500 crédits · 0,10€/lead</div>
+        <ul class="plan-features">
+          <li>500 crédits</li>
+          <li>Scanner IA</li>
+          <li>CRM complet</li>
+          <li>WhatsApp & Email</li>
+          <li>Recharge possible</li>
+        </ul>
+      </div>
+
+      <!-- BUSINESS -->
+      <div class="plan-card" id="pc-business" onclick="selectPlan('business')">
+        <div class="plan-check" id="chk-business"></div>
+        <div class="plan-name">Business</div>
+        <div class="plan-price"><sup>€</sup>150</div>
+        <div class="plan-price-sub">1 500 crédits · 0,10€/lead</div>
+        <ul class="plan-features">
+          <li>1 500 crédits</li>
+          <li>Scanner IA</li>
+          <li>CRM complet</li>
+          <li>WhatsApp & Email</li>
+          <li>Recharge possible</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <!-- AGENCE -->
+    <div class="plan-card agency-card" id="pc-agency" onclick="selectPlan('agency')">
+      <div class="plan-check" id="chk-agency"></div>
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="font-size:28px">🏢</div>
+        <div>
+          <div class="plan-name" style="font-size:15px">Agence / Entreprise — Leads illimités</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:3px">Volume illimité · Tarif sur mesure · Support prioritaire · Contactez-nous pour un devis</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="max-width:480px;margin:0 auto">
+      <div class="err-box" id="err2"></div>
+      <button class="btn-next" id="plan-confirm-btn" onclick="confirmPlan()" disabled>
+        Confirmer mon choix →
+      </button>
+      <div style="text-align:center;margin-top:12px">
+        <button onclick="backToStep1()" style="background:none;border:none;color:rgba(255,255,255,0.3);font-size:12px;cursor:pointer;font-family:inherit">← Retour</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ ÉTAPE 3 : CONFIRMATION ══ -->
+  <div id="step3" style="display:none">
+    <div class="form-card" style="text-align:center;max-width:440px">
+      <div id="step3-content"></div>
+      <div class="err-box" id="err3"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+var PLANS_DATA = {
+  free:     { name:"Gratuit",           credits:15,   price:0   },
+  starter:  { name:"Starter",           credits:250,  price:25  },
+  pro:      { name:"Pro",               credits:500,  price:50  },
+  business: { name:"Business",          credits:1500, price:150 },
+  agency:   { name:"Agence/Entreprise", credits:0,    price:0   }
+};
+
+var selectedPlan = null;
+var formData = {};
+
+function goToPlans() {
+  var teamName   = (document.getElementById("teamName").value   || "").trim();
+  var adminLogin = (document.getElementById("adminLogin").value || "").trim();
+  var adminPass  =  document.getElementById("adminPass").value  || "";
+  var adminName  = (document.getElementById("adminName").value  || "").trim();
+  var err = document.getElementById("err1");
+  err.style.display = "none";
+
+  if (!teamName)        { err.textContent = "Le nom de l'equipe est obligatoire."; err.style.display = "block"; return; }
+  if (!adminLogin)      { err.textContent = "L'identifiant est obligatoire.";      err.style.display = "block"; return; }
+  if (adminPass.length < 6) { err.textContent = "Mot de passe : 6 caracteres minimum."; err.style.display = "block"; return; }
+
+  formData = { teamName: teamName, adminLogin: adminLogin, adminPass: adminPass, adminName: adminName };
+
+  document.getElementById("step1").style.display = "none";
+  document.getElementById("step2").style.display = "block";
+  document.getElementById("s1").className = "step done";
+  document.getElementById("s2").className = "step active";
+}
+
+function backToStep1() {
+  document.getElementById("step2").style.display = "none";
+  document.getElementById("step1").style.display = "block";
+  document.getElementById("s1").className = "step active";
+  document.getElementById("s2").className = "step";
+}
+
+function selectPlan(id) {
+  selectedPlan = id;
+  ["free","starter","pro","business","agency"].forEach(function(p) {
+    var card = document.getElementById("pc-" + p);
+    var chk  = document.getElementById("chk-" + p);
+    if (card) card.classList.remove("active");
+    if (chk)  chk.textContent = "";
+  });
+  var card = document.getElementById("pc-" + id);
+  var chk  = document.getElementById("chk-" + id);
+  if (card) card.classList.add("active");
+  if (chk)  chk.textContent = "✓";
+  document.getElementById("plan-confirm-btn").disabled = false;
+  document.getElementById("err2").style.display = "none";
+}
+
+function confirmPlan() {
+  if (!selectedPlan) return;
+
+  if (selectedPlan === "agency") {
+    window.open("https://wa.me/33759536475?text=" + encodeURIComponent("Bonjour, offre Agence PushProspect. Equipe : " + formData.teamName), "_blank");
+    return;
+  }
+
+  document.getElementById("step2").style.display = "none";
+  document.getElementById("step3").style.display = "block";
+  document.getElementById("s2").className = "step done";
+  document.getElementById("s3").className = "step active";
+
+  var s3 = document.getElementById("step3-content");
+
+  if (selectedPlan === "free") {
+    s3.innerHTML = "<div style='font-size:44px;margin-bottom:14px'>⚡</div><div style='font-size:18px;font-weight:700;margin-bottom:8px'>Creation en cours...</div>";
+    fetch("/teams/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(Object.assign({}, formData, { plan: "free" }))
+    })
+    .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+    .then(function(res) {
+      if (!res.ok) { showErr3(res.data.error || "Erreur creation"); return; }
+      s3.innerHTML = "<div style='font-size:48px;margin-bottom:16px'>✅</div><div style='font-size:20px;font-weight:700;margin-bottom:8px;color:#10B981'>Compte cree !</div><div style='font-size:13px;color:rgba(255,255,255,0.5)'>15 credits offerts. Redirection...</div>";
+      setTimeout(function() { window.location.href = "/"; }, 2000);
+    })
+    .catch(function(e) { showErr3("Erreur reseau : " + e.message); });
+
+  } else {
+    s3.innerHTML = "<div style='font-size:44px;margin-bottom:14px'>💳</div><div style='font-size:18px;font-weight:700;margin-bottom:8px'>Redirection paiement...</div>";
+    var theRefCode = "` + refCode + `";
+    fetch("/teams/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(Object.assign({}, formData, { plan: "pending" }))
+    })
+    .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+    .then(function(res) {
+      if (!res.ok) { showErr3(res.data.error || "Erreur creation"); return; }
+      return fetch("/stripe/create-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planId: selectedPlan, teamId: res.data.teamId, userId: res.data.adminId, refCode: theRefCode })
+      });
+    })
+    .then(function(r) { if (!r) return; return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+    .then(function(res) {
+      if (!res || !res.ok || !res.data.url) { showErr3((res && res.data.error) || "Erreur Stripe"); return; }
+      window.location.href = res.data.url;
+    })
+    .catch(function(e) { showErr3("Erreur reseau : " + e.message); });
+  }
+}
+
+function showErr3(msg) {
+  document.getElementById("step3-content").innerHTML = "<div style='font-size:40px;margin-bottom:12px'>❌</div><div style='font-size:16px;font-weight:700'>Une erreur est survenue</div>";
+  var el = document.getElementById("err3");
+  el.textContent = msg;
+  el.style.display = "block";
+}
+</script>
+</body>
+</html>`;
+}
+
+
 // ── QR Page HTML ────────────────────────────────────────────────────
 function qrPageHTML(qr, status) {
   if (status === 'connected') return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>WA Connecté</title>
@@ -303,12 +728,22 @@ const server = http.createServer(async (req, res) => {
   const url = req.url.split('?')[0];
 
   // ── HTML principal ──
+// ── Page inscription publique ──
+  if (req.method === 'GET' && url === '/register') {
+    const refCode = new URL('http://x' + req.url).searchParams.get('ref') || '';
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(buildRegisterPage(refCode));
+    return;
+  }
+
   // ── HTML principal ──
-  if (req.method === 'GET' && (url === '/' || url === '/index.html')) {
-    const f = path.join(__dirname, 'index.html');
-    if (!fs.existsSync(f)) { res.writeHead(404); res.end('<h2>index.html introuvable</h2>'); return; }
-    res.writeHead(200, {'Content-Type':'text/html; charset=utf-8'});
-    res.end(fs.readFileSync(f)); return;
+if (req.method === 'GET' && (url === '/' || url === '/index.html')) {
+    res.writeHead(200, {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
+      'Pragma': 'no-cache'
+    });
+    res.end(HTML); return;
   }
 
   // ── Fichiers statiques (logo, images, css…) ──
@@ -518,7 +953,7 @@ const raw = [
   // ── Teams : /teams/create ──
   if (req.method === 'POST' && url === '/teams/create') {
     try {
-      const { teamName, adminLogin, adminPass, adminName, expiresAt } = await parseBody(req);
+      const { teamName, adminLogin, adminPass, adminName, expiresAt, plan } = await parseBody(req);
       if (!teamName || !adminLogin || !adminPass) {
         jsonResp(res, 400, { error: 'teamName, adminLogin, adminPass requis' }); return;
       }
@@ -543,9 +978,13 @@ const raw = [
         pass: adminPass, role: 'admin', teamId,
         created: new Date().toISOString().split('T')[0]
       });
-      writeDB('teams', teams);
+writeDB('teams', teams);
       writeDB('users', users);
-      console.log(`  ✅ Équipe créée : ${teamName} (admin: ${adminLogin})`);
+      // Initialiser les crédits selon le plan choisi
+      const planKey = plan || 'free';
+      const planDef = PLANS[planKey] || PLANS.free;
+      addCredits(teamId, planDef.credits, `Inscription — plan ${planDef.name}`, planKey);
+      console.log(`  ✅ Équipe créée : ${teamName} (admin: ${adminLogin}) — plan: ${planKey} (${planDef.credits} crédits)`);
       jsonResp(res, 200, { ok: true, teamId, adminId });
     } catch(err) {
       jsonResp(res, 500, { error: err.message });
@@ -565,6 +1004,40 @@ const raw = [
       }))
     }));
     jsonResp(res, 200, { data: result }); return;
+  }
+
+  // ── Proxy Gemini : /api ──
+// ── Crédits : status ──
+  if (req.method === 'GET' && url.startsWith('/credits/status')) {
+    try {
+      const teamId = new URL('http://x' + req.url).searchParams.get('teamId');
+      if (!teamId) { jsonResp(res, 400, { error: 'teamId requis' }); return; }
+      const entry = getTeamCredits(teamId);
+      jsonResp(res, 200, { ok: true, credits: entry || { balance: 0, plan: 'free', totalBought: 0 } });
+    } catch(err) { jsonResp(res, 500, { error: err.message }); }
+    return;
+  }
+
+  // ── Crédits : consommer ──
+  if (req.method === 'POST' && url === '/credits/consume') {
+    try {
+      const { teamId, count } = await parseBody(req);
+      if (!teamId) { jsonResp(res, 400, { error: 'teamId requis' }); return; }
+      const result = consumeCredit(teamId, count || 1);
+      jsonResp(res, result.ok ? 200 : 402, result);
+    } catch(err) { jsonResp(res, 500, { error: err.message }); }
+    return;
+  }
+
+  // ── Crédits : recharger manuellement (superadmin) ──
+  if (req.method === 'POST' && url === '/credits/add') {
+    try {
+      const { teamId, amount, reason, plan } = await parseBody(req);
+      if (!teamId || !amount) { jsonResp(res, 400, { error: 'teamId et amount requis' }); return; }
+      const entry = addCredits(teamId, amount, reason || 'Ajout manuel', plan);
+      jsonResp(res, 200, { ok: true, credits: entry });
+    } catch(err) { jsonResp(res, 500, { error: err.message }); }
+    return;
   }
 
   // ── Proxy Gemini : /api ──
@@ -627,6 +1100,286 @@ const result = await callGroq([systemPrompt, ...messages]);
       console.error('  ✗ /chat:', err.message);
       jsonResp(res, 500, { error: err.message });
     }
+    return;
+  }
+
+  // ── AFFILIATION : générer/récupérer le lien d'un utilisateur ──
+if (req.method === 'POST' && url === '/affiliate/init') {
+  try {
+    const { userId } = await parseBody(req);
+    const affiliates = readDB('affiliates') || [];
+    let aff = affiliates.find(a => a.userId === userId);
+    if (!aff) {
+      const code = 'REF' + Math.random().toString(36).substr(2, 8).toUpperCase();
+      aff = {
+        userId,
+        code,
+        createdAt: new Date().toISOString(),
+        balance: 0,
+        totalEarned: 0,
+        lastPayoutRequest: null
+      };
+      affiliates.push(aff);
+      writeDB('affiliates', affiliates);
+    }
+    jsonResp(res, 200, { ok: true, affiliate: aff });
+  } catch(err) { jsonResp(res, 500, { error: err.message }); }
+  return;
+}
+
+// ── AFFILIATION : récupérer les stats d'un affilié ──
+if (req.method === 'GET' && url.startsWith('/affiliate/stats')) {
+  try {
+    const userId = new URL('http://x' + req.url).searchParams.get('userId');
+    const affiliates = readDB('affiliates') || [];
+    const deposits = readDB('deposits') || [];
+    const users = readDB('users') || [];
+    const aff = affiliates.find(a => a.userId === userId);
+    if (!aff) { jsonResp(res, 404, { error: 'Non trouvé' }); return; }
+    // Toutes les équipes créées via ce code
+    const referred = users.filter(u => u.refCode === aff.code);
+    // Tous les dépôts liés à ces utilisateurs
+    const refDeposits = deposits.filter(d => referred.some(u => u.id === d.userId || u.teamId === d.teamId));
+    const totalDeposits = refDeposits.reduce((s, d) => s + (d.amount || 0), 0);
+    const commission = Math.round(totalDeposits * 0.20 * 100) / 100;
+    jsonResp(res, 200, {
+      affiliate: aff,
+      referred: referred.map(u => ({
+        id: u.id, name: u.name || u.login, login: u.login,
+        teamId: u.teamId, createdAt: u.created,
+        deposits: deposits.filter(d => d.userId === u.id || d.teamId === u.teamId)
+                          .reduce((s, d) => s + (d.amount || 0), 0)
+      })),
+      totalDeposits,
+      commission,
+      balance: aff.balance || 0,
+      totalEarned: aff.totalEarned || 0,
+      lastPayoutRequest: aff.lastPayoutRequest || null,
+      history: refDeposits
+    });
+  } catch(err) { jsonResp(res, 500, { error: err.message }); }
+  return;
+}
+
+
+
+// ── AFFILIATION : création de compte via lien affilié ──
+if (req.method === 'POST' && url === '/affiliate/register') {
+  try {
+    const { teamName, adminLogin, adminPass, adminName, refCode } = await parseBody(req);
+    if (!teamName || !adminLogin || !adminPass) {
+      jsonResp(res, 400, { error: 'Champs requis manquants' }); return;
+    }
+    const users = readDB('users');
+    if (users.find(u => u.login === adminLogin)) {
+      jsonResp(res, 400, { error: 'Identifiant déjà utilisé' }); return;
+    }
+    const teamId = 'team_' + Date.now();
+    const adminId = 'user_' + Date.now() + '_admin';
+    const teams = readDB('teams');
+    teams.push({
+      id: teamId, name: teamName, ownerId: adminId,
+      createdAt: new Date().toISOString().split('T')[0],
+      subscription: { status: 'active', expiresAt: null, plan: 'starter' }
+    });
+    users.push({
+      id: adminId, login: adminLogin, name: adminName || adminLogin,
+      pass: adminPass, role: 'admin', teamId,
+      refCode: refCode || null,
+      created: new Date().toISOString().split('T')[0]
+    });
+    writeDB('teams', teams);
+    writeDB('users', users);
+
+    // Mettre à jour le solde de l'affilié si refCode valide
+    if (refCode) {
+      const affiliates = readDB('affiliates') || [];
+      const aff = affiliates.find(a => a.code === refCode);
+      if (aff) {
+        if (!aff.referredTeams) aff.referredTeams = [];
+        aff.referredTeams.push({ teamId, teamName, adminLogin, joinedAt: new Date().toISOString() });
+        writeDB('affiliates', affiliates);
+      }
+    }
+    console.log(`✅ Inscription affiliée : ${teamName} (ref: ${refCode || 'aucun'})`);
+    jsonResp(res, 200, { ok: true, teamId, adminId });
+  } catch(err) { jsonResp(res, 500, { error: err.message }); }
+  return;
+}
+
+// ── AFFILIATION : enregistrer un dépôt (appelé par Stripe webhook ou manuellement) ──
+if (req.method === 'POST' && url === '/affiliate/deposit') {
+  try {
+    const { userId, teamId, amount, description } = await parseBody(req);
+    if (!amount || amount <= 0) { jsonResp(res, 400, { error: 'Montant invalide' }); return; }
+    const deposits = readDB('deposits') || [];
+    const deposit = {
+      id: 'dep_' + Date.now(),
+      userId, teamId, amount,
+      description: description || 'Rechargement crédits',
+      createdAt: new Date().toISOString()
+    };
+    deposits.push(deposit);
+    writeDB('deposits', deposits);
+
+    // Calculer et créditer la commission chez l'affilié
+    const users = readDB('users') || [];
+    const user = users.find(u => u.id === userId || u.teamId === teamId);
+    if (user && user.refCode) {
+      const affiliates = readDB('affiliates') || [];
+      const aff = affiliates.find(a => a.code === user.refCode);
+      if (aff) {
+        const commission = Math.round(amount * 0.20 * 100) / 100;
+        aff.balance = Math.round(((aff.balance || 0) + commission) * 100) / 100;
+        aff.totalEarned = Math.round(((aff.totalEarned || 0) + commission) * 100) / 100;
+        if (!aff.commissionHistory) aff.commissionHistory = [];
+        aff.commissionHistory.push({
+          depositId: deposit.id, amount, commission,
+          from: user.name || user.login, createdAt: deposit.createdAt
+        });
+        writeDB('affiliates', affiliates);
+        console.log(`💸 Commission +${commission}€ pour affilié ${aff.userId}`);
+      }
+    }
+    jsonResp(res, 200, { ok: true, deposit });
+  } catch(err) { jsonResp(res, 500, { error: err.message }); }
+  return;
+}
+
+// ── AFFILIATION : demande de payout ──
+if (req.method === 'POST' && url === '/affiliate/payout-request') {
+  try {
+    const { userId } = await parseBody(req);
+    const affiliates = readDB('affiliates') || [];
+    const aff = affiliates.find(a => a.userId === userId);
+    if (!aff) { jsonResp(res, 404, { error: 'Affilié introuvable' }); return; }
+    if ((aff.balance || 0) < 20) {
+      jsonResp(res, 400, { error: 'Solde insuffisant (minimum 20€)' }); return;
+    }
+    const now = new Date();
+    if (aff.lastPayoutRequest) {
+      const last = new Date(aff.lastPayoutRequest);
+      const diffDays = (now - last) / (1000 * 60 * 60 * 24);
+      if (diffDays < 15) {
+        jsonResp(res, 400, { error: `Prochain payout possible dans ${Math.ceil(15 - diffDays)} jours` }); return;
+      }
+    }
+    aff.lastPayoutRequest = now.toISOString();
+    const payouts = readDB('payouts') || [];
+    payouts.push({
+      id: 'pay_' + Date.now(), userId, amount: aff.balance,
+      status: 'pending', requestedAt: now.toISOString()
+    });
+    writeDB('payouts', payouts);
+    writeDB('affiliates', affiliates);
+    jsonResp(res, 200, { ok: true, amount: aff.balance });
+  } catch(err) { jsonResp(res, 500, { error: err.message }); }
+  return;
+}
+
+// ── AFFILIATION : reset solde (superadmin) ──
+if (req.method === 'POST' && url === '/affiliate/reset-balance') {
+  try {
+    const { userId } = await parseBody(req);
+    const affiliates = readDB('affiliates') || [];
+    const aff = affiliates.find(a => a.userId === userId);
+    if (!aff) { jsonResp(res, 404, { error: 'Affilié introuvable' }); return; }
+    const paidAmount = aff.balance;
+    aff.balance = 0;
+    if (!aff.paidHistory) aff.paidHistory = [];
+    aff.paidHistory.push({ amount: paidAmount, paidAt: new Date().toISOString() });
+    writeDB('affiliates', affiliates);
+    jsonResp(res, 200, { ok: true });
+  } catch(err) { jsonResp(res, 500, { error: err.message }); }
+  return;
+}
+
+// ── STRIPE : rechargement de crédits ──
+// ── STRIPE : créer session paiement ──
+if (req.method === 'POST' && url === '/stripe/create-session') {
+    try {
+      const { planId, teamId, userId, refCode, amount, credits } = await parseBody(req);
+
+      let productName, unitAmount, successUrl, cancelUrl;
+
+      if (amount && !planId) {
+        // Recharge libre depuis la modal ou l'onglet affiliation
+        if (amount < 10) { jsonResp(res, 400, { error: 'Montant minimum : 10€' }); return; }
+        const creditsCount = credits || Math.round((amount / 10) * 100);
+        productName = `PushProspect — ${creditsCount} crédits`;
+        unitAmount = Math.round(amount * 100);
+        successUrl = `http://localhost:${PORT}/?payment=success&amount=${amount}&credits=${creditsCount}&teamId=${teamId || ''}&userId=${userId || ''}`;
+        cancelUrl  = `http://localhost:${PORT}/`;
+      } else {
+        // Plan fixe depuis l'inscription
+        const plan = PLANS[planId];
+        if (!plan || plan.price === 0) { jsonResp(res, 400, { error: 'Plan invalide ou gratuit' }); return; }
+        productName = `PushProspect — ${plan.name} (${plan.credits} crédits)`;
+        unitAmount  = plan.price * 100;
+        successUrl  = `http://localhost:${PORT}/?payment=success&planId=${planId}&teamId=${teamId || ''}&userId=${userId || ''}&refCode=${refCode || ''}`;
+        cancelUrl   = `http://localhost:${PORT}/register${refCode ? '?ref=' + refCode : ''}`;
+      }
+
+      const bodyStr = new URLSearchParams({
+        'payment_method_types[]': 'card',
+        'line_items[0][price_data][currency]': 'eur',
+        'line_items[0][price_data][product_data][name]': productName,
+        'line_items[0][price_data][unit_amount]': String(unitAmount),
+        'line_items[0][quantity]': '1',
+        mode: 'payment',
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        'metadata[teamId]': teamId || '',
+        'metadata[userId]': userId || '',
+      }).toString();
+
+      const stripeResp = await new Promise((resolve, reject) => {
+        const r = https.request({
+          hostname: 'api.stripe.com', path: '/v1/checkout/sessions', method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${STRIPE_SECRET_KEY}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Length': Buffer.byteLength(bodyStr)
+          }
+        }, res2 => {
+          let d = ''; res2.on('data', c => d += c);
+          res2.on('end', () => { try { resolve(JSON.parse(d)); } catch(e) { reject(e); } });
+        });
+        r.on('error', reject); r.write(bodyStr); r.end();
+      });
+
+      if (stripeResp.error) { jsonResp(res, 400, { error: stripeResp.error.message }); return; }
+      jsonResp(res, 200, { url: stripeResp.url });
+    } catch(err) { jsonResp(res, 500, { error: err.message }); }
+    return;
+  }
+
+  // ── STRIPE : succès paiement (retour URL) ──
+if (req.method === 'POST' && url === '/stripe/confirm') {
+    try {
+      const { planId, teamId, userId, amount, credits } = await parseBody(req);
+
+      let creditCount, planLabel;
+
+      if (amount && !planId) {
+        // Recharge libre
+        creditCount = credits || Math.round((parseFloat(amount) / 10) * 100);
+        planLabel   = `Recharge ${amount}€`;
+      } else {
+        // Plan fixe
+        const plan = PLANS[planId];
+        if (!plan) { jsonResp(res, 400, { error: 'Plan invalide' }); return; }
+        creditCount = plan.credits;
+        planLabel   = `Achat plan ${plan.name}`;
+      }
+
+      const entry = addCredits(teamId, creditCount, planLabel, planId || 'recharge');
+      const teams = readDB('teams');
+      const team = teams.find(t => t.id === teamId);
+      if (team && planId) { team.plan = planId; writeDB('teams', teams); }
+      console.log(`  💳 Paiement confirmé — ${planLabel} (${creditCount} crédits) pour team ${teamId}`);
+      jsonResp(res, 200, { ok: true, credits: entry });
+    } catch(err) { jsonResp(res, 500, { error: err.message }); }
     return;
   }
 

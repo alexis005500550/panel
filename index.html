@@ -554,6 +554,7 @@ a{color:inherit}
   40%{opacity:0.3;transform:scale(0.8)}
   60%{opacity:1;transform:scale(1.2)}
 }
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -571,7 +572,7 @@ a{color:inherit}
     <input class="login-input" id="li-user" placeholder="Votre identifiant" autocomplete="username"/>
     <label class="login-label">Mot de passe</label>
     <input class="login-input" id="li-pass" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/>
-    <button class="login-btn" onclick="doLogin()">Se connecter</button>
+    <button class="login-btn" id="login-btn" onclick="doLogin()">Se connecter</button>
     <div class="login-footer">PushProspect CRM · <a href="/register" style="color:rgba(100,140,255,0.7);text-decoration:none">Créer un compte</a></div>
   </div>
 </div>
@@ -1242,6 +1243,37 @@ a{color:inherit}
 </div>
 
 <script>
+
+
+// Ajoute cette fonction en haut du <script>
+function getFingerprint() {
+  var canvas = document.createElement('canvas');
+  var ctx = canvas.getContext('2d');
+  ctx.textBaseline = 'top';
+  ctx.font = '14px Arial';
+  ctx.fillText('fingerprint', 2, 2);
+  var canvasData = canvas.toDataURL();
+  
+  var data = [
+    navigator.userAgent,
+    navigator.language,
+    screen.width + 'x' + screen.height,
+    screen.colorDepth,
+    new Date().getTimezoneOffset(),
+    navigator.hardwareConcurrency || '',
+    navigator.platform || '',
+    canvasData.slice(-50)
+  ].join('|');
+  
+  // Hash simple
+  var hash = 0;
+  for (var i = 0; i < data.length; i++) {
+    hash = ((hash << 5) - hash) + data.charCodeAt(i);
+    hash = hash & hash;
+  }
+  return Math.abs(hash).toString(36);
+}
+
 // ══ CONSTANTS ══
 const TAG_COLORS={
   Chaud:{bg:"rgba(220,38,38,0.08)",txt:"var(--red)"},
@@ -1805,63 +1837,122 @@ function saveActivity(){const sl=activity.slice(0,200);_lsSet(SK_ACTIVITY,sl);se
 function logActivity(msg,type='info'){activity.unshift({msg,type,ts:new Date().toLocaleString('fr-FR'),user:currentUser?.name||'?'});saveActivity();}
 
 // ══ AUTH ══
-function doLogin(){
+async function doLogin(){
   const login=document.getElementById('li-user').value.trim();
   const pass=document.getElementById('li-pass').value.trim();
   document.getElementById('login-err').style.display='none';
 
-  fetch('/db/users')
-    .then(r=>r.json())
-    .then(j=>{
-      const userList = j.data || [];
-      const u = userList.find(x =>
-        (x.login||'').trim()===login && (x.pass||'').trim()===pass
-      );
-      if(!u){
-        document.getElementById('login-err').textContent='Identifiants incorrects. Veuillez réessayer.';
-        document.getElementById('login-err').style.display='block';
-        return;
-      }
-      // Vérification abonnement
-      if(u.role!=='superadmin'&&u.teamId){
-        const team=(teams||[]).find(t=>t.id===u.teamId);
-        if(team){
-          const sub=team.subscription||{};
-          if(sub.status!=='active'||(sub.expiresAt&&sub.expiresAt<today())){
-            document.getElementById('login-err').textContent='Abonnement expiré. Contactez l\'administrateur.';
-            document.getElementById('login-err').style.display='block';
-            return;
-          }
+  const btn=document.getElementById('login-btn');
+  btn.disabled=true;
+  btn.innerHTML=`<span style="display:inline-flex;align-items:center;justify-content:center;gap:8px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin .7s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Connexion…</span>`;
+
+  const resetBtn=()=>{btn.disabled=false;btn.textContent='Se connecter';};
+
+  try {
+    const j = await fetch('/db/users').then(r=>r.json());
+    const userList = j.data || [];
+    const u = userList.find(x =>
+      (x.login||'').trim()===login && (x.pass||'').trim()===pass
+    );
+    if(!u){
+      document.getElementById('login-err').textContent='Identifiants incorrects. Veuillez réessayer.';
+      document.getElementById('login-err').style.display='block';
+      resetBtn();return;
+    }
+    // Vérification abonnement
+    if(u.role!=='superadmin'&&u.teamId){
+      const team=(teams||[]).find(t=>t.id===u.teamId);
+      if(team){
+        const sub=team.subscription||{};
+        if(sub.status!=='active'||(sub.expiresAt&&sub.expiresAt<today())){
+          document.getElementById('login-err').textContent='Abonnement expiré. Contactez l\'administrateur.';
+          document.getElementById('login-err').style.display='block';
+          resetBtn();return;
         }
       }
-      // Mettre à jour users en mémoire avec la version fraîche
-      users = userList;
-      currentUser=u;
-      sessionStorage.setItem(SK_SESSION,JSON.stringify(u));
-      document.getElementById('login-screen').style.display='none';
-      document.getElementById('main-app').style.display='flex';
-      initApp();
-    })
-    .catch(()=>{
-      // Fallback sur users en mémoire si le serveur est injoignable
-      const u=users.find(x=>(x.login||'').trim()===login&&(x.pass||'').trim()===pass);
-      if(!u){document.getElementById('login-err').style.display='block';return;}
-      currentUser=u;sessionStorage.setItem(SK_SESSION,JSON.stringify(u));
-      document.getElementById('login-screen').style.display='none';
-      document.getElementById('main-app').style.display='flex';
-      initApp();
-    });
+    }
+    users = userList;
+    currentUser=u;
+    sessionStorage.setItem(SK_SESSION,JSON.stringify(u));
+
+    const overlay=document.createElement('div');
+    overlay.id='app-loading-overlay';
+    overlay.style.cssText=`position:fixed;inset:0;background:#0D0F14;z-index:9998;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;transition:opacity .5s ease`;
+    overlay.innerHTML=`
+      <div style="position:relative;width:56px;height:56px">
+        <svg width="56" height="56" viewBox="0 0 56 56" fill="none" style="position:absolute;inset:0;animation:spin .9s linear infinite">
+          <circle cx="28" cy="28" r="24" stroke="rgba(28,84,240,0.15)" stroke-width="3"/>
+          <path d="M28 4a24 24 0 0 1 24 24" stroke="#1C54F0" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="#7BA4FF"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </div>
+      </div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.3);letter-spacing:0.5px;font-family:'IBM Plex Sans',sans-serif">Chargement de l'espace de travail…</div>
+      <div style="width:180px;height:2px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden">
+        <div id="app-load-bar" style="height:100%;background:#1C54F0;border-radius:2px;width:0%;transition:width .4s ease"></div>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('main-app').style.display='flex';
+
+    let pct=0;
+    const barInterval=setInterval(()=>{
+      pct=Math.min(pct+(Math.random()*18+6),90);
+      const bar=document.getElementById('app-load-bar');
+      if(bar)bar.style.width=pct+'%';
+    },180);
+
+    await initApp();
+
+    clearInterval(barInterval);
+    const bar=document.getElementById('app-load-bar');
+    if(bar)bar.style.width='100%';
+    setTimeout(()=>{
+      overlay.style.opacity='0';
+      setTimeout(()=>overlay.remove(),500);
+    },300);
+    resetBtn();
+
+  } catch(err) {
+    // Fallback local si le serveur est inaccessible
+    const u=users.find(x=>(x.login||'').trim()===login&&(x.pass||'').trim()===pass);
+    if(!u){
+      document.getElementById('login-err').textContent='Identifiants incorrects. Veuillez réessayer.';
+      document.getElementById('login-err').style.display='block';
+      resetBtn();return;
+    }
+    currentUser=u;
+    sessionStorage.setItem(SK_SESSION,JSON.stringify(u));
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('main-app').style.display='flex';
+    await initApp();
+    resetBtn();
+  }
 }
 function doLogout(){
   sessionStorage.removeItem(SK_SESSION);currentUser=null;
+  const btn=document.getElementById('login-btn');
+  if(btn){btn.disabled=false;btn.textContent='Se connecter';}
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('main-app').style.display='none';
   document.getElementById('li-pass').value='';
+  document.getElementById('li-user').value='';
   document.getElementById('login-err').style.display='none';
 }
 function checkSession(){try{const s=sessionStorage.getItem(SK_SESSION);if(s){currentUser=JSON.parse(s);return true;}}catch(e){}return false;}
 async function initApp(){
-  document.getElementById('sb-av').textContent=(currentUser.name||'?')[0].toUpperCase();
+const sbAv=document.getElementById('sb-av');
+if(currentUser.avatar){
+  sbAv.innerHTML=`<img src="${currentUser.avatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block"/>`;
+}else{
+  sbAv.innerHTML='';
+  sbAv.textContent=(currentUser.name||'?')[0].toUpperCase();
+}
+const avatarInitials=document.getElementById('avatar-initials');
+if(avatarInitials) avatarInitials.textContent=(currentUser.name||'?')[0].toUpperCase();
+
   document.getElementById('sb-name').textContent=currentUser.name||currentUser.login;
   const roleLabels={admin:'Administrateur',setter:'Setter',closer:'Closer',user:'Utilisateur'};
   document.getElementById('sb-role').textContent=roleLabels[currentUser.role]||'Utilisateur';
@@ -2041,8 +2132,9 @@ async function callSourceAPI(srcKey,niche,ville,n,allExistingBiz){
       let fullText='';let searchQueries=[];
       if(data.content){for(const b of data.content){if(b.type==='text')fullText+=b.text;else if(b.type==='tool_use'&&b.name==='web_search')searchQueries.push(b.input?.query||'');}}
       const raw=extractEnterprises(fullText);const results=[];
-      for(const e of raw){
-        const nom=(e.nom||'').trim();if(!nom||nom.length<2)continue;
+for(const e of raw){
+  if(scanAborted)break;
+  const nom=(e.nom||'').trim();if(!nom||nom.length<2)continue;
         if(/^(null|undefined|nom|entreprise|test|example|xxx)$/i.test(nom))continue;
         const phone=e.telephone||e.phone||e.tel||null;
         const email=e.email||null;
@@ -2375,12 +2467,29 @@ async function scanWithAI(){
       }
     }
   }
-  scanAborted=false;scanResults=[];
+scanAborted=false;scanResults=[];
   document.getElementById('results-list').innerHTML='';document.getElementById('scan-alert').innerHTML='';
   document.getElementById('scan-log').innerHTML='';document.getElementById('scan-log').style.display='none';
   document.getElementById('scan-progress').style.display='none';document.getElementById('btn-add-all').style.display='none';
   document.getElementById('btn-stop').style.display='inline-flex';
-  const btn=document.getElementById('scan-btn');btn.disabled=true;btn.textContent='Scan en cours…';
+  
+  const btn=document.getElementById('scan-btn');
+  btn.disabled=true;
+  btn.innerHTML=`<span style="display:inline-flex;align-items:center;gap:7px">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin .7s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+    <span id="scan-btn-label">Initialisation…</span>
+  </span>`;
+
+  // Mise à jour dynamique du label pendant le scan
+  const scanLabels=['Connexion aux sources…','Interrogation des annuaires…','Extraction en cours…','Analyse des données…','Déduplication…'];
+  let _scanLabelIdx=0;
+  const _scanLabelInterval=setInterval(()=>{
+    _scanLabelIdx=(_scanLabelIdx+1)%scanLabels.length;
+    const lbl=document.getElementById('scan-btn-label');
+    if(lbl)lbl.textContent=scanLabels[_scanLabelIdx];
+  },2800);
+  // Stocker pour cleanup
+  window._scanLabelInterval=_scanLabelInterval;
   const pillRow=document.getElementById('src-status-row');pillRow.style.display='flex';
   pillRow.innerHTML=activeSrcs.map(s=>`<span class="src-pill pending" id="pill-${s}">${SOURCE_DEFS[s]?.label||s}</span>`).join('');
   const quotaPerSrc=Math.max(5,Math.ceil(targetBatch/activeSrcs.length));
@@ -2388,18 +2497,39 @@ async function scanWithAI(){
   const allBiz=()=>[...contacts.map(c=>c.biz),...blocked.map(b=>b.biz),...scanResults.map(r=>r.biz)].filter(Boolean);
 // Délai progressif entre sources pour éviter la surcharge API
   const delay=i=>new Promise(r=>setTimeout(r,i*500));
-  const tasks=activeSrcs.map(async(srcKey,srcIdx)=>{
-    await delay(srcIdx);
-    if(scanAborted)return;setPillStatus(srcKey,'running');
+const tasks=activeSrcs.map(async(srcKey,srcIdx)=>{
+  await delay(srcIdx);
+  if(scanAborted||scanResults.length>=targetBatch)return;
+  setPillStatus(srcKey,'running');
     try{
       const{results,queries}=await callSourceAPI(srcKey,nicheVal,ville,quotaPerSrc,allBiz());
       if(scanAborted)return;
       let added=0;
       for(const r of results){
+        if(scanAborted||scanResults.length>=targetBatch)break;
+
         if(isBlocked(r)){log(srcKey,` "${r.biz}" exclu (non intéressé)`,'log-info');continue;}
         if(isDup(r,contacts)||isDup(r,scanResults))continue;
-        const fullR={...r,niche:nicheName,id:Date.now()+Math.random(),tags:r.has_website?[]:['Pas de site'],status:'new',score:r.phone?7:5,notes:'',createdAt:today()};
-        scanResults.push(fullR);appendResult(fullR,scanResults.length-1);added++;
+const fullR={...r,niche:nicheName,id:Date.now()+Math.random(),tags:r.has_website?[]:['Pas de site'],status:'new',score:r.phone?7:5,notes:'',createdAt:today()};
+
+// Vérifier crédits en temps réel
+const tidRT=getTeamId();
+if(!isSuperAdmin()&&tidRT&&_currentCredits&&_currentCredits.plan!=='agency'){
+  if((_currentCredits.balance||0)<=0){
+    scanAborted=true;
+    showAlert('❌ Plus de crédits disponibles. <a href="#" onclick="switchView(\'credits\',null);return false;" style="color:var(--blue);font-weight:600">Recharger →</a>','warn');
+    document.getElementById('btn-stop').style.display='none';
+    document.getElementById('scan-btn').disabled=false;
+    document.getElementById('scan-btn').textContent='Lancer le scan';
+    break;
+  }
+  // Décrémenter localement en temps réel
+  _currentCredits.balance=Math.max(0,(_currentCredits.balance||0)-1);
+  const el=document.getElementById('sb-credits-val');
+  if(el)el.textContent=_currentCredits.balance.toLocaleString('fr-FR');
+}
+
+scanResults.push(fullR);appendResult(fullR,scanResults.length-1);added++;
       }
       if(added>0){setPillStatus(srcKey,'done',`+${added}`);log(srcKey,` ${queries.length} requêtes → +${added} contacts`,'log-ok');}
       else{setPillStatus(srcKey,'empty');log(srcKey,` 0 résultat`,'log-info');}
@@ -2432,8 +2562,26 @@ async function scanWithAI(){
           if(scanResults.length>=targetBatch)break;
           if(isBlocked(r)){continue;}
           if(isDup(r,contacts)||isDup(r,scanResults))continue;
-          const fullR={...r,niche:nicheName,id:Date.now()+Math.random(),tags:r.has_website?[]:['Pas de site'],status:'new',score:r.phone?7:5,notes:'',createdAt:today()};
-          scanResults.push(fullR);appendResult(fullR,scanResults.length-1);added++;
+const fullR={...r,niche:nicheName,id:Date.now()+Math.random(),tags:r.has_website?[]:['Pas de site'],status:'new',score:r.phone?7:5,notes:'',createdAt:today()};
+
+// Vérifier crédits en temps réel
+const tidRT=getTeamId();
+if(!isSuperAdmin()&&tidRT&&_currentCredits&&_currentCredits.plan!=='agency'){
+  if((_currentCredits.balance||0)<=0){
+    scanAborted=true;
+    showAlert('❌ Plus de crédits disponibles. <a href="#" onclick="switchView(\'credits\',null);return false;" style="color:var(--blue);font-weight:600">Recharger →</a>','warn');
+    document.getElementById('btn-stop').style.display='none';
+    document.getElementById('scan-btn').disabled=false;
+    document.getElementById('scan-btn').textContent='Lancer le scan';
+    break;
+  }
+  // Décrémenter localement en temps réel
+  _currentCredits.balance=Math.max(0,(_currentCredits.balance||0)-1);
+  const el=document.getElementById('sb-credits-val');
+  if(el)el.textContent=_currentCredits.balance.toLocaleString('fr-FR');
+}
+
+scanResults.push(fullR);appendResult(fullR,scanResults.length-1);added++;
         }
         if(added>0){setPillStatus(srcKey,'done',`+${added}`);log(srcKey,` Relance → +${added} (total ${scanResults.length}/${targetBatch})`,'log-ok');}
         else{setPillStatus(srcKey,'empty');log(srcKey,` 0 nouveau résultat`,'log-info');}
@@ -2449,21 +2597,25 @@ async function scanWithAI(){
   }
   // ── FIN BOUCLE ──
 
-document.getElementById('btn-stop').style.display='none';btn.disabled=false;btn.textContent='Lancer le scan';
+if(window._scanLabelInterval)clearInterval(window._scanLabelInterval);
+document.getElementById('btn-stop').style.display='none';
+btn.disabled=false;
+btn.innerHTML=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Lancer le scan`;
   setProgress(100,`Terminé — ${scanResults.length}/${targetBatch} leads`);
   if(!scanResults.length){showAlert('Aucun résultat. Vérifiez la configuration du proxy et la clé API.','warn');return;}
 
   // ── CONSOMMER LES CRÉDITS ──
-  const tidC=getTeamId();
-  if(!isSuperAdmin()&&tidC&&scanResults.length>0){
-    try{
-      await fetch('/credits/consume',{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({teamId:tidC,count:scanResults.length})
-      });
-      await refreshCreditsDisplay();
-    }catch(e){console.warn('Erreur consommation crédits:',e);}
-  }
+// Synchroniser avec le serveur à la fin
+const tidC=getTeamId();
+if(!isSuperAdmin()&&tidC&&scanResults.length>0){
+  try{
+    await fetch('/credits/consume',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({teamId:tidC,count:scanResults.length})
+    });
+    await refreshCreditsDisplay();
+  }catch(e){console.warn('Erreur consommation crédits:',e);}
+}
   const wP=scanResults.filter(r=>r.phone).length,wE=scanResults.filter(r=>r.email).length,wS=scanResults.filter(r=>r.website).length,wD=scanResults.filter(r=>r.dirigeant).length;
   const achieved=scanResults.length>=targetBatch;
   showAlert(`${achieved?'✅':'⚠️'} ${scanResults.length} contacts trouvés${achieved?' (objectif atteint)':` — objectif : ${targetBatch}`} · ${wP} téléphones · ${wE} emails · ${wS} sites web · ${wD} dirigeants`,'ok');
@@ -3062,18 +3214,65 @@ function showConfirm(title,msg,okLabel,okStyle,cb){
 function confirmOk(){document.getElementById('confirm-overlay').classList.remove('show');if(_confirmCallback)_confirmCallback();_confirmCallback=null;}
 function confirmCancel(){document.getElementById('confirm-overlay').classList.remove('show');_confirmCallback=null;}
 
-
 function renderSuperAdminView(){
   const el=document.getElementById('users-list');
   const now=today();
+  const searchQ=(document.getElementById('sa-user-search')?.value||'').toLowerCase();
+
+  // Tous les users non-superadmin avec leurs équipes
+  const allUsers=users.filter(u=>u.role!=='superadmin');
+  const filtered=allUsers.filter(u=>{
+    if(!searchQ)return true;
+    return (u.login||'').toLowerCase().includes(searchQ)||
+           (u.name||'').toLowerCase().includes(searchQ)||
+           (u.role||'').toLowerCase().includes(searchQ);
+  });
+
   el.innerHTML=`
     <div style="margin-bottom:16px">
       <div class="page-header" style="margin-bottom:10px">
-        <div><div class="page-title">Gestion des équipes</div><div class="page-sub">${teams.length} équipe(s) active(s)</div></div>
+        <div><div class="page-title">Gestion des équipes</div><div class="page-sub">${teams.length} équipe(s) · ${allUsers.length} utilisateur(s)</div></div>
         <button class="btn btn-primary" style="margin-left:auto" onclick="openCreateTeamModal()">+ Nouvelle équipe</button>
       </div>
     </div>
-    ${!teams.length?'<div style="text-align:center;padding:40px;color:var(--text3);font-size:13px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg)">Aucune équipe créée. Créez la première équipe ci-dessus.</div>':
+
+    <!-- RECHERCHE UTILISATEURS -->
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;margin-bottom:16px">
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:10px">Rechercher un utilisateur</div>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:${filtered.length&&searchQ?'12px':'0'}">
+        <div class="search-wrap" style="max-width:100%;flex:1">
+          <span class="search-ic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+          <input class="search-input" id="sa-user-search" placeholder="Rechercher par nom, login, rôle…" oninput="renderSuperAdminView()" style="width:100%" value="${searchQ}"/>
+        </div>
+      </div>
+      ${searchQ&&filtered.length?`
+        <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px">
+          ${filtered.map(u=>{
+            const team=teams.find(t=>t.id===u.teamId);
+            const rc={admin:'role-admin',setter:'role-setter',closer:'role-closer',user:'role-user'};
+            const cr=team?.credits||{};
+            return`<div style="display:flex;align-items:center;gap:10px;padding:10px 13px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);flex-wrap:wrap">
+              <div style="width:32px;height:32px;border-radius:50%;background:var(--blue-lt);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">${(u.name||u.login||'?')[0].toUpperCase()}</div>
+              <div style="flex:1;min-width:120px">
+                <div style="font-size:13px;font-weight:600">${u.name||u.login}</div>
+                <div style="font-size:11.5px;color:var(--text3)">@${u.login} · ${team?team.name:'Sans équipe'}</div>
+              </div>
+              <span class="role-badge ${rc[u.role]||'role-user'}">${u.role}</span>
+              <div style="font-size:12px;color:var(--text3);min-width:80px;text-align:right">
+                <span style="color:var(--blue);font-weight:600">${team?((team.credits?.balance||0).toLocaleString('fr-FR')):'—'}</span> crédits
+              </div>
+              <button class="btn btn-sm btn-teal" onclick="openCreditModal('${u.teamId||''}','${(u.name||u.login).replace(/'/g,"\\'")}','${u.login}')">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                Attribuer crédits
+              </button>
+            </div>`;
+          }).join('')}
+        </div>`
+      :searchQ&&!filtered.length?`<div style="font-size:13px;color:var(--text3);padding:12px 0">Aucun utilisateur trouvé pour "${searchQ}"</div>`:''}
+    </div>
+
+    <!-- ÉQUIPES -->
+    ${!teams.length?'<div style="text-align:center;padding:40px;color:var(--text3);font-size:13px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg)">Aucune équipe créée.</div>':
     teams.map(t=>{
       const members=users.filter(u=>u.teamId===t.id);
       const admin=members.find(u=>u.role==='admin');
@@ -3081,22 +3280,92 @@ function renderSuperAdminView(){
       const isExpired=sub.expiresAt&&sub.expiresAt<now;
       const subColor=sub.status==='active'&&!isExpired?'var(--green)':isExpired?'var(--red)':'var(--text3)';
       const subLabel=isExpired?'Expiré':sub.status==='active'?'Actif':'Inactif';
+      const credits=t.credits||{};
       return`<div class="user-card-el fi" style="flex-direction:column;align-items:stretch;gap:10px">
-        <div style="display:flex;align-items:center;gap:12px">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
           <div class="user-card-av" style="background:var(--blue-lt);color:var(--blue)">${(t.name||'?')[0].toUpperCase()}</div>
-          <div style="flex:1">
+          <div style="flex:1;min-width:120px">
             <div class="user-card-name">${t.name}</div>
-            <div class="user-card-meta">Créée le ${t.createdAt} · Admin : ${admin?.login||'—'}</div>
+            <div class="user-card-meta">Admin : ${admin?.login||'—'} · ${members.length} membre(s)</div>
           </div>
-          <span style="font-size:12px;font-weight:600;color:${subColor};background:${subColor==='var(--green)'?'var(--green-lt)':subColor==='var(--red)'?'var(--red-lt)':'var(--surface)'};padding:3px 10px;border-radius:20px;border:1px solid ${subColor==='var(--green)'?'rgba(14,159,110,0.25)':subColor==='var(--red)'?'rgba(220,38,38,0.25)':'var(--border)'}">${subLabel}${sub.expiresAt?' · exp. '+sub.expiresAt:''}</span>
+          <div style="display:flex;align-items:center;gap:5px;font-size:12px">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            <span style="font-weight:700;color:var(--blue)">${(credits.balance||0).toLocaleString('fr-FR')}</span>
+            <span style="color:var(--text3)">crédits</span>
+          </div>
+          <span style="font-size:12px;font-weight:600;color:${subColor};padding:3px 10px;border-radius:20px;background:${subColor==='var(--green)'?'var(--green-lt)':subColor==='var(--red)'?'var(--red-lt)':'var(--surface)'};border:1px solid ${subColor==='var(--green)'?'rgba(14,159,110,0.25)':subColor==='var(--red)'?'rgba(220,38,38,0.25)':'var(--border)'}">${subLabel}${sub.expiresAt?' · '+sub.expiresAt:''}</span>
+          <button class="btn btn-sm btn-teal" onclick="openCreditModal('${t.id}','${t.name.replace(/'/g,"\\'")}','équipe')">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            Crédits
+          </button>
           <button class="btn btn-sm btn-danger" onclick="deleteTeam('${t.id}')">Supprimer</button>
         </div>
         <div style="display:flex;gap:5px;flex-wrap:wrap;padding-top:8px;border-top:1px solid var(--border)">
           ${members.map(u=>{const rc={admin:'role-admin',setter:'role-setter',closer:'role-closer',user:'role-user'};return`<span class="role-badge ${rc[u.role]||'role-user'}">${u.name||u.login} (${u.role})</span>`;}).join('')}
-          <span style="font-size:11px;color:var(--text3);padding:3px 8px">${members.length} membre(s)</span>
         </div>
       </div>`;
     }).join('')}`;
+}
+
+// ── Modal attribution crédits ──
+let _creditModalTeamId=null;
+function openCreditModal(teamId, displayName, login){
+  _creditModalTeamId=teamId;
+  if(!teamId){showToast('Cet utilisateur n\'a pas d\'équipe assignée',false);return;}
+  const team=teams.find(t=>t.id===teamId);
+  const currentBal=(team?.credits?.balance||0).toLocaleString('fr-FR');
+  document.getElementById('credit-modal-title').textContent=`Attribuer des crédits — ${displayName}`;
+  document.getElementById('credit-modal-info').innerHTML=`
+    <div style="font-size:13px;color:var(--text2)">
+      <strong>${displayName}</strong>${login!=='équipe'?` (@${login})`:''}
+      · Solde actuel : <strong style="color:var(--blue)">${currentBal} crédits</strong>
+    </div>`;
+  document.getElementById('credit-amount-input').value='100';
+  document.getElementById('credit-reason-input').value='Attribution manuelle';
+  document.getElementById('credit-modal').classList.add('show');
+}
+
+async function saveCreditAttribution(){
+  const amount=parseInt(document.getElementById('credit-amount-input').value)||0;
+  const reason=document.getElementById('credit-reason-input').value.trim()||'Attribution manuelle';
+  if(!amount||amount<=0){showToast('Montant invalide',false);return;}
+  if(!_creditModalTeamId){showToast('Équipe introuvable',false);return;}
+  try{
+    const r=await fetch('/credits/add',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({teamId:_creditModalTeamId,amount,reason,addedBy:currentUser?.name||'SuperAdmin'})
+    });
+    const d=await r.json();
+    if(!r.ok){showToast(d.error||'Erreur serveur',false);return;}
+    // Mettre à jour localement
+    const team=teams.find(t=>t.id===_creditModalTeamId);
+    if(team){
+      if(!team.credits)team.credits={balance:0,totalBought:0};
+      team.credits.balance=(team.credits.balance||0)+amount;
+      team.credits.totalBought=(team.credits.totalBought||0)+amount;
+      await serverSave('teams',teams);
+    }
+    closeModals();
+    showToast(`${amount.toLocaleString('fr-FR')} crédits attribués`,true);
+    logActivity(`Crédits attribués : +${amount} à l'équipe (${reason})`,'info');
+    renderSuperAdminView();
+    renderUsers();
+  }catch(e){
+    // Fallback local si endpoint absent
+    const team=teams.find(t=>t.id===_creditModalTeamId);
+    if(team){
+      if(!team.credits)team.credits={balance:0,totalBought:0};
+      team.credits.balance=(team.credits.balance||0)+amount;
+      team.credits.totalBought=(team.credits.totalBought||0)+amount;
+      await serverSave('teams',teams);
+      closeModals();
+      showToast(`${amount.toLocaleString('fr-FR')} crédits attribués (local)`,true);
+      logActivity(`Crédits attribués : +${amount} (${reason})`,'info');
+      renderSuperAdminView();
+    }else{
+      showToast('Erreur : '+e.message,false);
+    }
+  }
 }
 
 function openCreateTeamModal(){document.getElementById('create-team-modal').classList.add('show');}
@@ -3138,16 +3407,27 @@ const roleLabels={admin:'Administrateur',setter:'Setter',closer:'Closer',user:'U
   const avTxt=['var(--blue)','var(--teal)','var(--amber)','var(--pink)','var(--purple)'];
   const tid=getTeamId();
   const visibleUsers=users.filter(u=>u.teamId===tid&&u.role!=='superadmin');
-  document.getElementById('users-list').innerHTML=visibleUsers.map((u,i)=>`<div class="user-card-el fi">
-    <div class="user-card-av" style="background:${avColors[i%avColors.length]};color:${avTxt[i%avTxt.length]}">${(u.name||u.login||'?')[0].toUpperCase()}</div>
+document.getElementById('users-list').innerHTML=visibleUsers.map((u,i)=>`<div class="user-card-el fi">
+    <div style="position:relative;flex-shrink:0;cursor:pointer" onclick="if('${u.id}'==='${currentUser?.id||''}')openAvatarModal()">
+      ${u.avatar
+        ?`<img src="${u.avatar}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;display:block"/>`
+        :`<div class="user-card-av" style="background:${avColors[i%avColors.length]};color:${avTxt[i%avTxt.length]}">${(u.name||u.login||'?')[0].toUpperCase()}</div>`
+      }
+      ${u.id===currentUser?.id?`<div style="position:absolute;bottom:-2px;right:-2px;width:16px;height:16px;border-radius:50%;background:var(--blue);border:2px solid var(--white);display:flex;align-items:center;justify-content:center">
+        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      </div>`:''}
+    </div>
     <div style="flex:1">
       <div class="user-card-name">${u.name||u.login}</div>
       <div class="user-card-meta">@${u.login} · Créé le ${u.created||'—'}</div>
     </div>
     <span class="role-badge ${roleClass[u.role]||'role-user'}">${roleLabels[u.role]||'Utilisateur'}</span>
+    ${u.id===currentUser?.id?`<button class="btn btn-sm btn-teal" onclick="openAvatarModal()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      Photo
+    </button>`:''}
     ${u.role!=='admin'?`<button class="btn btn-sm btn-danger" onclick="deleteUser('${u.id}')">Supprimer</button>`:'<span style="font-size:11px;color:var(--text3)">Propriétaire équipe</span>'}
-
-  </div>`).join('');
+</div>`).join('');
 }
 function openUserModal(){
   document.getElementById('user-modal-title').textContent='Ajouter un utilisateur';
@@ -3368,6 +3648,61 @@ function copyPhones(){
 }
 
 function renderAll(){updateStats();renderNicheNav();renderFilterChips();renderList();}
+
+
+// ══ AVATAR ══
+function openAvatarModal(){
+  document.getElementById('avatar-preview').src=currentUser.avatar||'';
+  document.getElementById('avatar-preview').style.display=currentUser.avatar?'block':'none';
+  document.getElementById('avatar-placeholder').style.display=currentUser.avatar?'none':'flex';
+  document.getElementById('avatar-modal').classList.add('show');
+}
+
+function handleAvatarFile(ev){
+  const file=ev.target.files[0];if(!file)return;
+  if(file.size>2*1024*1024){showToast('Image trop lourde (max 2 Mo)',false);return;}
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const base64=e.target.result;
+    document.getElementById('avatar-preview').src=base64;
+    document.getElementById('avatar-preview').style.display='block';
+    document.getElementById('avatar-placeholder').style.display='none';
+    document.getElementById('avatar-save-btn').dataset.pending=base64;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function saveAvatar(){
+  const pending=document.getElementById('avatar-save-btn').dataset.pending;
+  if(!pending){showToast('Aucune image sélectionnée',false);return;}
+  const idx=users.findIndex(u=>u.id===currentUser.id);
+  if(idx===-1){showToast('Utilisateur introuvable',false);return;}
+  users[idx].avatar=pending;
+  currentUser.avatar=pending;
+  sessionStorage.setItem(SK_SESSION,JSON.stringify(currentUser));
+  saveUsers();
+  // Mettre à jour sidebar
+  const sbAv=document.getElementById('sb-av');
+  sbAv.innerHTML=`<img src="${pending}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block"/>`;
+  closeModals();
+  showToast('Photo de profil mise à jour',true);
+  if(document.getElementById('view-users').style.display!=='none')renderUsers();
+}
+
+async function removeAvatar(){
+  const idx=users.findIndex(u=>u.id===currentUser.id);
+  if(idx===-1)return;
+  delete users[idx].avatar;
+  delete currentUser.avatar;
+  sessionStorage.setItem(SK_SESSION,JSON.stringify(currentUser));
+  saveUsers();
+  const sbAv=document.getElementById('sb-av');
+  sbAv.innerHTML='';
+  sbAv.textContent=(currentUser.name||'?')[0].toUpperCase();
+  closeModals();
+  showToast('Photo supprimée',true);
+  if(document.getElementById('view-users').style.display!=='none')renderUsers();
+}
 
 // ══ CRÉDITS ══
 let _currentCredits = null;
@@ -3916,18 +4251,25 @@ async function loadAffiliateStats() {
   } catch(e) { return null; }
 }
 
+
 async function renderAffiliationView() {
   const el = document.getElementById('view-affiliation');
-  el.innerHTML = `<div style="max-width:1000px;margin:0 auto">
-    <div class="page-header"><div class="page-title">Programme d'Affiliation</div></div>
-    <div style="text-align:center;padding:40px;color:var(--text3)">Chargement…</div>
+  el.innerHTML = `<div style="max-width:1000px;margin:0 auto;font-family:var(--font)">
+    <div style="margin-bottom:28px">
+      <div style="font-size:20px;font-weight:700;letter-spacing:-0.4px;margin-bottom:4px">Programme d'affiliation</div>
+      <div style="font-size:12px;color:var(--text3)">20 % de commission sur chaque rechargement de vos filleuls · Paiement sur demande</div>
+    </div>
+    <div style="text-align:center;padding:40px;color:var(--text3);font-size:13px">Chargement…</div>
   </div>`;
 
   await initAffiliate();
   const stats = await loadAffiliateStats();
+
   if (!stats || !stats.affiliate) {
     el.innerHTML = `<div style="max-width:1000px;margin:0 auto">
-      <div style="text-align:center;padding:48px;color:var(--red)">Erreur de chargement. Réessayez.</div>
+      <div style="background:var(--red-lt);border:1px solid rgba(220,38,38,0.2);border-radius:var(--radius-lg);padding:16px 20px;font-size:13px;color:var(--red)">
+        Erreur de chargement des données. Veuillez rafraîchir la page.
+      </div>
     </div>`;
     return;
   }
@@ -3938,184 +4280,223 @@ async function renderAffiliationView() {
   const totalEarned = (aff.totalEarned || 0).toFixed(2);
   const referred = stats.referred || [];
   const totalDeposits = (stats.totalDeposits || 0).toFixed(2);
-  const commission = (stats.commission || 0).toFixed(2);
+  const now = today();
 
-  // Vérifier éligibilité payout
   let payoutBlocked = false;
   let payoutBlockReason = '';
   if ((aff.balance || 0) < 20) {
     payoutBlocked = true;
-    payoutBlockReason = `Solde insuffisant — minimum 20€ requis (solde actuel : ${balance}€)`;
+    payoutBlockReason = `Solde insuffisant — minimum 20 € requis (solde actuel : ${balance} €)`;
   } else if (aff.lastPayoutRequest) {
     const last = new Date(aff.lastPayoutRequest);
     const diff = (Date.now() - last) / (1000 * 60 * 60 * 24);
     if (diff < 15) {
       payoutBlocked = true;
-      payoutBlockReason = `Prochain payout disponible dans ${Math.ceil(15 - diff)} jours`;
+      payoutBlockReason = `Prochain reversement possible dans ${Math.ceil(15 - diff)} jour(s)`;
     }
   }
 
-  el.innerHTML = `<div style="max-width:1000px;margin:0 auto">
-    <div class="page-header">
-      <div><div class="page-title">Programme d'Affiliation</div>
-        <div class="page-sub">Gagnez 20% sur chaque rechargement de crédits de vos filleuls</div></div>
+  el.innerHTML = `<div style="max-width:1000px;margin:0 auto;font-family:var(--font)">
+
+    <div style="margin-bottom:28px">
+      <div style="font-size:20px;font-weight:700;letter-spacing:-0.4px;margin-bottom:4px">Programme d'affiliation</div>
+      <div style="font-size:12px;color:var(--text3)">20 % de commission sur chaque rechargement de vos filleuls · Paiement sur demande · Minimum 20 €</div>
     </div>
 
-    <!-- LIEN D'AFFILIATION -->
-    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius-xl);padding:22px;margin-bottom:16px">
-      <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--text)">🔗 Votre lien d'affiliation unique</div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;font-size:13px;font-family:var(--mono);color:var(--blue);word-break:break-all">${refLink}</div>
-        <button class="btn btn-primary" onclick="copyAffLink('${refLink}')">Copier</button>
+    <!-- KPI -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px">
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px">
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;margin-bottom:8px">Filleuls inscrits</div>
+        <div style="font-size:28px;font-weight:300;letter-spacing:-1px;font-variant-numeric:tabular-nums">${referred.length}</div>
       </div>
-      <div style="font-size:12px;color:var(--text3);margin-top:10px">Partagez ce lien — chaque équipe qui s'inscrit et recharge des crédits vous rapporte <strong style="color:var(--blue)">20% de commission</strong></div>
-    </div>
-
-    <!-- STATS CARDS -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">
-      <div class="stat-card" style="border-left:3px solid var(--blue)">
-        <div class="stat-card-val" style="color:var(--blue)">${referred.length}</div>
-        <div class="stat-card-lbl">Inscrits via votre lien</div>
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px">
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;margin-bottom:8px">Volume généré</div>
+        <div style="font-size:28px;font-weight:300;letter-spacing:-1px;font-variant-numeric:tabular-nums">${totalDeposits} €</div>
       </div>
-      <div class="stat-card" style="border-left:3px solid var(--teal)">
-        <div class="stat-card-val" style="color:var(--teal)">${totalDeposits}€</div>
-        <div class="stat-card-lbl">Total dépôts générés</div>
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px">
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;margin-bottom:8px">Commissions totales</div>
+        <div style="font-size:28px;font-weight:300;letter-spacing:-1px;font-variant-numeric:tabular-nums">${totalEarned} €</div>
       </div>
-      <div class="stat-card" style="border-left:3px solid var(--green)">
-        <div class="stat-card-val" style="color:var(--green)">${totalEarned}€</div>
-        <div class="stat-card-lbl">Revenus totaux générés</div>
-      </div>
-      <div class="stat-card" style="border-left:3px solid var(--amber)">
-        <div class="stat-card-val" style="color:var(--amber)">${balance}€</div>
-        <div class="stat-card-lbl">Solde disponible</div>
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px">
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;margin-bottom:8px">Solde disponible</div>
+        <div style="font-size:28px;font-weight:300;letter-spacing:-1px;font-variant-numeric:tabular-nums;color:var(--green)">${balance} €</div>
       </div>
     </div>
 
-    <!-- PAYOUT + STRIPE -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
-      <!-- PAYOUT -->
-      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius-xl);padding:20px">
-        <div style="font-size:13px;font-weight:700;margin-bottom:8px">💰 Retrait des gains</div>
-        <div style="font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.7">
-          Solde disponible : <strong style="color:var(--green);font-size:16px">${balance}€</strong><br>
-          Minimum : 20€ · Fréquence : tous les 15 jours<br>
-          ${aff.lastPayoutRequest ? `Dernière demande : ${new Date(aff.lastPayoutRequest).toLocaleDateString('fr-FR')}` : 'Aucune demande effectuée'}
+    <!-- LIEN + REVERSEMENT -->
+    <div style="display:grid;grid-template-columns:1fr 340px;gap:14px;margin-bottom:24px">
+
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 22px">
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;margin-bottom:12px">Lien de parrainage</div>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
+          <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:9px 13px;font-size:12px;font-family:var(--mono);color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${refLink}</div>
+          <button class="btn btn-sm" onclick="copyAffLink('${refLink}')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copier
+          </button>
         </div>
-        <button class="btn ${payoutBlocked ? '' : 'btn-primary'}" 
-          onclick="${payoutBlocked ? `showToast('${payoutBlockReason}', false)` : 'requestPayout()'}"
-          style="${payoutBlocked ? 'opacity:.5;cursor:not-allowed' : ''}">
-          ${payoutBlocked ? '⛔ ' + (aff.balance < 20 ? 'Solde insuffisant' : 'Délai non écoulé') : '💸 Demander un payout'}
+        <div style="font-size:12px;color:var(--text3);line-height:1.7;border-top:1px solid var(--border);padding-top:12px">
+          Chaque équipe qui s'inscrit via ce lien et effectue un rechargement vous crédite automatiquement de <strong style="color:var(--text)">20 %</strong> du montant. La commission est calculée en temps réel.
+        </div>
+      </div>
+
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 22px;display:flex;flex-direction:column;gap:12px">
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;font-weight:600">Demande de reversement</div>
+        <div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:4px">Solde à reverser</div>
+          <div style="font-size:22px;font-weight:300;letter-spacing:-0.8px;font-variant-numeric:tabular-nums;color:${(aff.balance||0)>=20?'var(--green)':'var(--text3)'}">${balance} €</div>
+        </div>
+        <div style="font-size:12px;color:var(--text3);border-top:1px solid var(--border);padding-top:10px;line-height:1.7">
+          Minimum : 20 € · Fréquence : tous les 15 jours<br>
+          ${aff.lastPayoutRequest ? `Dernière demande : ${new Date(aff.lastPayoutRequest).toLocaleDateString('fr-FR')}` : 'Aucune demande enregistrée'}
+        </div>
+        <button class="btn ${payoutBlocked ? '' : 'btn-primary'}" onclick="${payoutBlocked ? `showToast('${payoutBlockReason}', false)` : 'requestPayout()'}" style="${payoutBlocked ? 'opacity:.45;cursor:not-allowed' : ''}">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+          Demander un reversement
         </button>
-        ${payoutBlocked ? `<div style="font-size:11px;color:var(--text3);margin-top:8px">${payoutBlockReason}</div>` : ''}
-      </div>
-
-      <!-- RECHARGE CREDITS -->
-      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius-xl);padding:20px">
-        <div style="font-size:13px;font-weight:700;margin-bottom:8px">⚡ Recharger des crédits</div>
-        <div style="font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.7">
-          300 prospects = 15€<br>
-          Montant libre (minimum 20€)<br>
-          Paiement sécurisé via Stripe
-        </div>
-        <div style="display:flex;gap:7px;margin-bottom:10px;flex-wrap:wrap">
-          <button class="chip" onclick="setRechargeAmount(20)">20€</button>
-          <button class="chip" onclick="setRechargeAmount(50)">50€</button>
-          <button class="chip" onclick="setRechargeAmount(100)">100€</button>
-          <button class="chip" onclick="setRechargeAmount(200)">200€</button>
-        </div>
-        <div style="display:flex;gap:7px;align-items:center">
-          <input id="recharge-amount" class="form-input" type="number" min="20" placeholder="Montant (min 20€)" style="flex:1"/>
-          <button class="btn btn-primary" onclick="launchStripe()">Payer</button>
-        </div>
+        ${payoutBlocked ? `<div style="font-size:11px;color:var(--text3)">${payoutBlockReason}</div>` : ''}
       </div>
     </div>
 
-    <!-- LISTE DES FILLEULS -->
-    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius-xl);padding:20px;margin-bottom:16px">
-      <div style="font-size:13px;font-weight:700;margin-bottom:14px">👥 Vos filleuls (${referred.length})</div>
+    <!-- TABLEAU FILLEULS -->
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:24px">
+      <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:13px;font-weight:600">Filleuls</div>
+        <div style="font-size:12px;color:var(--text3)">${referred.length} compte${referred.length > 1 ? 's' : ''}</div>
+      </div>
       ${!referred.length
-        ? `<div style="text-align:center;padding:32px;color:var(--text3);font-size:13px">
-            Aucun inscrit pour l'instant.<br>Partagez votre lien pour commencer !
-          </div>`
-        : referred.map(r => `
-          <div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)">
-            <div style="width:36px;height:36px;border-radius:50%;background:var(--blue-lt);color:var(--blue);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0">${(r.name||'?')[0].toUpperCase()}</div>
-            <div style="flex:1">
-              <div style="font-size:13px;font-weight:600">${r.name || r.login}</div>
-              <div style="font-size:12px;color:var(--text3)">Inscrit le ${r.createdAt || '—'}</div>
-            </div>
-            <div style="text-align:right">
-              <div style="font-size:13px;font-weight:600;color:var(--teal)">${(r.deposits || 0).toFixed(2)}€ déposé</div>
-              <div style="font-size:11px;color:var(--green)">+${((r.deposits || 0) * 0.20).toFixed(2)}€ commission</div>
-            </div>
-          </div>`).join('')}
+        ? `<div style="padding:32px;text-align:center;color:var(--text3);font-size:13px">
+             Aucun filleul pour l'instant. Partagez votre lien pour commencer.
+           </div>`
+        : `<table style="width:100%;border-collapse:collapse;font-size:13px">
+             <thead>
+               <tr style="background:var(--surface)">
+                 <th style="padding:9px 20px;text-align:left;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;border-bottom:1px solid var(--border)">Compte</th>
+                 <th style="padding:9px 16px;text-align:left;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;border-bottom:1px solid var(--border)">Date d'inscription</th>
+                 <th style="padding:9px 16px;text-align:right;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;border-bottom:1px solid var(--border)">Volume déposé</th>
+                 <th style="padding:9px 20px;text-align:right;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;border-bottom:1px solid var(--border)">Commission</th>
+               </tr>
+             </thead>
+             <tbody>
+               ${referred.map((r, i) => {
+                 const av = avc(r.name || r.login || '?');
+                 return `<tr style="border-bottom:1px solid var(--border)">
+                   <td style="padding:11px 20px">
+                     <div style="display:flex;align-items:center;gap:9px">
+                       <div style="width:28px;height:28px;border-radius:50%;background:${av.bg};color:${av.txt};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0">${(r.name||r.login||'?')[0].toUpperCase()}</div>
+                       <div>
+                         <div style="font-weight:500;font-size:13px">${r.name || r.login}</div>
+                         <div style="font-size:11px;color:var(--text3)">@${r.login || '—'}</div>
+                       </div>
+                     </div>
+                   </td>
+                   <td style="padding:11px 16px;color:var(--text3);font-size:12px;font-variant-numeric:tabular-nums">${r.createdAt || '—'}</td>
+                   <td style="padding:11px 16px;text-align:right;font-variant-numeric:tabular-nums;font-weight:500">${(r.deposits || 0).toFixed(2)} €</td>
+                   <td style="padding:11px 20px;text-align:right;font-variant-numeric:tabular-nums;color:var(--green);font-weight:600">+ ${((r.deposits || 0) * 0.20).toFixed(2)} €</td>
+                 </tr>`;
+               }).join('')}
+             </tbody>
+             <tfoot>
+               <tr style="background:var(--surface);border-top:1px solid var(--border)">
+                 <td colspan="2" style="padding:10px 20px;font-size:12px;color:var(--text3)">Total</td>
+                 <td style="padding:10px 16px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums">${totalDeposits} €</td>
+                 <td style="padding:10px 20px;text-align:right;font-weight:600;color:var(--green);font-variant-numeric:tabular-nums">+ ${totalEarned} €</td>
+               </tr>
+             </tfoot>
+           </table>`}
     </div>
 
     <!-- HISTORIQUE COMMISSIONS -->
     ${(aff.commissionHistory && aff.commissionHistory.length) ? `
-    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius-xl);padding:20px;margin-bottom:16px">
-      <div style="font-size:13px;font-weight:700;margin-bottom:14px">📈 Historique des commissions</div>
-      ${aff.commissionHistory.slice(0,20).map(h => `
-        <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12.5px">
-          <div style="flex:1;color:var(--text2)">Dépôt de <strong>${h.from}</strong> — ${h.amount}€</div>
-          <div style="color:var(--green);font-weight:600">+${h.commission}€</div>
-          <div style="color:var(--text3);font-size:11px">${new Date(h.createdAt).toLocaleDateString('fr-FR')}</div>
-        </div>`).join('')}
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:24px">
+      <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:13px;font-weight:600">Historique des transactions</div>
+        <div style="font-size:12px;color:var(--text3)">${aff.commissionHistory.length} ligne${aff.commissionHistory.length > 1 ? 's' : ''}</div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="background:var(--surface)">
+            <th style="padding:9px 20px;text-align:left;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;border-bottom:1px solid var(--border)">Date</th>
+            <th style="padding:9px 16px;text-align:left;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;border-bottom:1px solid var(--border)">Filleul</th>
+            <th style="padding:9px 16px;text-align:right;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;border-bottom:1px solid var(--border)">Montant déposé</th>
+            <th style="padding:9px 20px;text-align:right;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;border-bottom:1px solid var(--border)">Commission</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${aff.commissionHistory.slice(0, 50).map(h => `
+            <tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:10px 20px;font-size:12px;color:var(--text3);font-variant-numeric:tabular-nums">${new Date(h.createdAt).toLocaleDateString('fr-FR')}</td>
+              <td style="padding:10px 16px;font-size:13px;font-weight:500">${h.from || '—'}</td>
+              <td style="padding:10px 16px;text-align:right;font-variant-numeric:tabular-nums">${h.amount} €</td>
+              <td style="padding:10px 20px;text-align:right;color:var(--green);font-weight:600;font-variant-numeric:tabular-nums">+ ${h.commission} €</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
     </div>` : ''}
 
     ${isSuperAdmin() ? renderSuperAdminAffiliates() : ''}
   </div>`;
-
-  // Vérifier retour Stripe
-  const params = new URLSearchParams(window.location.search);
-  if (params.get('payment') === 'success') {
-    const amount = parseFloat(params.get('amount') || '0');
-    const userId = params.get('userId');
-    const teamId = params.get('teamId');
-    if (amount > 0) {
-      await fetch('/affiliate/deposit', {
-        method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ userId, teamId, amount, description: 'Rechargement via Stripe' })
-      });
-      showToast(`✅ Paiement de ${amount}€ confirmé ! Crédits rechargés.`, true);
-      window.history.replaceState({}, '', '/');
-    }
-  }
 }
 
+
 function renderSuperAdminAffiliates() {
-  return `<div style="background:var(--white);border:2px solid var(--amber);border-radius:var(--radius-xl);padding:20px;margin-bottom:16px">
-    <div style="font-size:13px;font-weight:700;margin-bottom:4px;color:var(--amber)">👑 Vue SuperAdmin — Tous les affiliés</div>
-    <div style="font-size:12px;color:var(--text3);margin-bottom:14px">Vous pouvez réinitialiser le solde d'un affilié après paiement manuel</div>
-    <button class="btn btn-sm" onclick="loadAllAffiliates()" style="margin-bottom:12px">Charger tous les affiliés</button>
-    <div id="all-affiliates-list"></div>
+  return `<div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:24px">
+    <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:13px;font-weight:600">Vue administrateur — Tous les affiliés</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:2px">Réinitialiser le solde après virement manuel</div>
+      </div>
+      <button class="btn btn-sm" onclick="loadAllAffiliates()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.75"/></svg>
+        Actualiser
+      </button>
+    </div>
+    <div id="all-affiliates-list" style="padding:12px 20px;font-size:13px;color:var(--text3)">Cliquez sur Actualiser pour charger les données.</div>
   </div>`;
 }
 
 async function loadAllAffiliates() {
   try {
-    const r = await fetch('/db/affiliates');
-    const d = await r.json();
-    const affs = d.data || [];
-    const usersR = await fetch('/db/users');
-    const ud = await usersR.json();
-    const allUsers = ud.data || [];
-
+    const [r, usersR] = await Promise.all([fetch('/db/affiliates'), fetch('/db/users')]);
+    const affs = (await r.json()).data || [];
+    const allUsers = (await usersR.json()).data || [];
     const el = document.getElementById('all-affiliates-list');
-    if (!affs.length) { el.innerHTML = '<div style="color:var(--text3);font-size:13px">Aucun affilié</div>'; return; }
 
-    el.innerHTML = affs.map(a => {
-      const u = allUsers.find(x => x.id === a.userId);
-      return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
-        <div style="flex:1">
-          <div style="font-size:13px;font-weight:600">${u ? (u.name || u.login) : a.userId}</div>
-          <div style="font-size:11px;color:var(--text3)">Code : ${a.code} · Total gagné : ${(a.totalEarned||0).toFixed(2)}€</div>
-        </div>
-        <div style="font-size:14px;font-weight:700;color:var(--amber)">${(a.balance||0).toFixed(2)}€</div>
-        <button class="btn btn-sm btn-warn" onclick="resetAffBalance('${a.userId}')">Marquer payé</button>
-      </div>`;
-    }).join('');
-  } catch(e) { showToast('Erreur chargement', false); }
+    if (!affs.length) {
+      el.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:8px 0">Aucun affilié enregistré.</div>';
+      return;
+    }
+
+    el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead>
+        <tr style="background:var(--surface)">
+          <th style="padding:9px 0;text-align:left;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;border-bottom:1px solid var(--border)">Utilisateur</th>
+          <th style="padding:9px 0;text-align:left;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;border-bottom:1px solid var(--border)">Code</th>
+          <th style="padding:9px 0;text-align:right;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;border-bottom:1px solid var(--border)">Total gagné</th>
+          <th style="padding:9px 0;text-align:right;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;border-bottom:1px solid var(--border)">Solde</th>
+          <th style="padding:9px 0;border-bottom:1px solid var(--border)"></th>
+        </tr>
+      </thead>
+      <tbody>
+        ${affs.map(a => {
+          const u = allUsers.find(x => x.id === a.userId);
+          return `<tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:10px 0;font-weight:500">${u ? (u.name || u.login) : a.userId}</td>
+            <td style="padding:10px 0;font-family:var(--mono);font-size:12px;color:var(--text3)">${a.code}</td>
+            <td style="padding:10px 0;text-align:right;font-variant-numeric:tabular-nums">${(a.totalEarned||0).toFixed(2)} €</td>
+            <td style="padding:10px 0;text-align:right;font-variant-numeric:tabular-nums;font-weight:600;color:${(a.balance||0)>0?'var(--green)':'var(--text3)'}">${(a.balance||0).toFixed(2)} €</td>
+            <td style="padding:10px 0;text-align:right">
+              <button class="btn btn-sm btn-ghost" onclick="resetAffBalance('${a.userId}')" style="font-size:11px">
+                Marquer versé
+              </button>
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+  } catch(e) {
+    showToast('Erreur de chargement', false);
+  }
 }
 
 async function resetAffBalance(userId) {
@@ -4478,6 +4859,67 @@ function stopConfetti() {
   _confettiParticles = [];
 }
 </script>
+<!-- CREDIT ATTRIBUTION MODAL -->
+<div class="modal-overlay" id="credit-modal">
+  <div class="modal" style="width:420px">
+    <div class="modal-title" id="credit-modal-title">Attribuer des crédits</div>
+    <div id="credit-modal-info" style="margin-bottom:14px;padding:10px 12px;background:var(--surface);border-radius:var(--radius);border:1px solid var(--border)"></div>
+    <div style="margin-bottom:11px">
+      <label class="form-label">Nombre de crédits à attribuer *</label>
+      <input class="form-input" id="credit-amount-input" type="number" min="1" placeholder="100" value="100"/>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:11px">
+      <button class="chip" onclick="document.getElementById('credit-amount-input').value=50">50</button>
+      <button class="chip" onclick="document.getElementById('credit-amount-input').value=100">100</button>
+      <button class="chip" onclick="document.getElementById('credit-amount-input').value=250">250</button>
+      <button class="chip" onclick="document.getElementById('credit-amount-input').value=500">500</button>
+      <button class="chip" onclick="document.getElementById('credit-amount-input').value=1000">1 000</button>
+      <button class="chip" onclick="document.getElementById('credit-amount-input').value=5000">5 000</button>
+    </div>
+    <div style="margin-bottom:3px">
+      <label class="form-label">Motif</label>
+      <input class="form-input" id="credit-reason-input" placeholder="Attribution manuelle, bonus, correction…" value="Attribution manuelle"/>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModals()">Annuler</button>
+      <button class="btn btn-primary" onclick="saveCreditAttribution()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        Attribuer les crédits
+      </button>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- AVATAR MODAL -->
+<div class="modal-overlay" id="avatar-modal">
+  <div class="modal" style="width:380px">
+    <div class="modal-title">Photo de profil</div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:14px;margin-bottom:18px">
+      <div style="position:relative">
+        <img id="avatar-preview" src="" style="display:none;width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid var(--blue)"/>
+        <div id="avatar-placeholder" style="width:100px;height:100px;border-radius:50%;background:var(--blue-lt);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:700;border:3px solid var(--blue)">
+          <span id="avatar-initials"></span>
+        </div>
+      </div>
+      <label class="btn btn-primary" style="cursor:pointer">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+        Choisir une photo
+        <input type="file" accept="image/*" style="display:none" onchange="handleAvatarFile(event)"/>
+      </label>
+      <div style="font-size:11.5px;color:var(--text3);text-align:center">JPG, PNG ou WebP · Max 2 Mo<br>La photo sera visible par tous les membres</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger" onclick="removeAvatar()" style="margin-right:auto">Supprimer</button>
+      <button class="btn" onclick="closeModals()">Annuler</button>
+      <button class="btn btn-primary" id="avatar-save-btn" onclick="saveAvatar()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+
+
 
 </body>
 </html>

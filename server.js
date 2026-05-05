@@ -13,7 +13,7 @@ const API_KEY = process.env.GEMINI_API_KEY;
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 if (!API_KEY) { console.error('❌ GEMINI_API_KEY manquante'); process.exit(1); }
 const PORT = process.env.PORT || 8080;
-const MODEL = 'gemini-2.5-flash';
+const MODEL = 'gemini-2.5-flash-lite';
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || 'sk_test_XXXX';
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 
@@ -26,6 +26,8 @@ const PLANS = {
 };
 
 
+
+if (!global._rateLimitMap) global._rateLimitMap = new Map();
 const DATA_DIR = path.join(__dirname, 'data');
 const WA_DIR   = path.join(__dirname, 'wa_session');
 
@@ -217,6 +219,23 @@ async function initWhatsApp() {
     setTimeout(initWhatsApp, 15000);
   }
 }
+
+
+// ══ TELEGRAM NOTIFICATIONS ══
+function sendTelegram(message) {
+  const TELEGRAM_BOT = '8512389683:AAGjagjTheVhiaYrj6by6ZLnoPUNcFRSINU';
+  const TELEGRAM_USER = '5899192308';
+  const text = encodeURIComponent(message);
+  const path = `/bot${TELEGRAM_BOT}/sendMessage?chat_id=${TELEGRAM_USER}&text=${text}&parse_mode=HTML`;
+  const req = https.request({
+    hostname: 'api.telegram.org', port: 443, path, method: 'GET'
+  }, res => { res.on('data', () => {}); });
+  req.on('error', e => console.warn('Telegram error:', e.message));
+  req.end();
+}
+
+let lastScanNotif = 0;
+
 
 function formatPhone(phone) {
   let n = phone.replace(/[\s.\-+()\[\]]/g, '');
@@ -514,6 +533,30 @@ input::placeholder{color:rgba(255,255,255,0.2)}
 </div>
 
 <script>
+function getFingerprint() {
+  var canvas = document.createElement('canvas');
+  var ctx = canvas.getContext('2d');
+  ctx.textBaseline = 'top';
+  ctx.font = '14px Arial';
+  ctx.fillText('fp', 2, 2);
+  var data = [
+    navigator.userAgent,
+    navigator.language,
+    screen.width + 'x' + screen.height,
+    screen.colorDepth,
+    new Date().getTimezoneOffset(),
+    navigator.hardwareConcurrency || '',
+    navigator.platform || '',
+    canvas.toDataURL().slice(-50)
+  ].join('|');
+  var hash = 0;
+  for (var i = 0; i < data.length; i++) {
+    hash = ((hash << 5) - hash) + data.charCodeAt(i);
+    hash = hash & hash;
+  }
+  return Math.abs(hash).toString(36);
+}
+
 var PLANS_DATA = {
   free:     { name:"Gratuit",           credits:15,   price:0   },
   starter:  { name:"Starter",           credits:250,  price:25  },
@@ -582,30 +625,32 @@ function confirmPlan() {
   document.getElementById("s3").className = "step active";
 
   var s3 = document.getElementById("step3-content");
+  var theRefCode = "` + refCode + `";
 
   if (selectedPlan === "free") {
-    s3.innerHTML = "<div style='font-size:44px;margin-bottom:14px'>⚡</div><div style='font-size:18px;font-weight:700;margin-bottom:8px'>Creation en cours...</div>";
-    fetch("/teams/create", {
+    s3.innerHTML = "<div style='font-size:18px;font-weight:700;margin-bottom:8px'>Creation en cours...</div>";
+fetch("/teams/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(Object.assign({}, formData, { plan: "free" }))
-    })
-    .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+      body: JSON.stringify(Object.assign({}, formData, { plan: "free", refCode: theRefCode, fingerprint: getFingerprint() }))    })
+    .then(function(r) { return r.json().then(function(d) { return { status: r.status, ok: r.ok, data: d }; }); })
     .then(function(res) {
+      if (res.status === 429) {
+        showErr3("Un compte a déjà été créé depuis votre connexion internet aujourd'hui. Connectez-vous à votre compte existant sur la page d'accueil, ou contactez le support : 07 59 53 64 75");
+        return;
+      }
       if (!res.ok) { showErr3(res.data.error || "Erreur creation"); return; }
-      s3.innerHTML = "<div style='font-size:48px;margin-bottom:16px'>✅</div><div style='font-size:20px;font-weight:700;margin-bottom:8px;color:#10B981'>Compte cree !</div><div style='font-size:13px;color:rgba(255,255,255,0.5)'>15 credits offerts. Redirection...</div>";
+      s3.innerHTML = "<div style='font-size:20px;font-weight:700;margin-bottom:8px;color:#10B981'>Compte cree !</div><div style='font-size:13px;color:rgba(255,255,255,0.5)'>15 credits offerts. Redirection...</div>";
       setTimeout(function() { window.location.href = "/"; }, 2000);
     })
     .catch(function(e) { showErr3("Erreur reseau : " + e.message); });
 
   } else {
-    s3.innerHTML = "<div style='font-size:44px;margin-bottom:14px'>💳</div><div style='font-size:18px;font-weight:700;margin-bottom:8px'>Redirection paiement...</div>";
-    var theRefCode = "` + refCode + `";
+    s3.innerHTML = "<div style='font-size:18px;font-weight:700;margin-bottom:8px'>Redirection paiement...</div>";
     fetch("/teams/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(Object.assign({}, formData, { plan: "pending" }))
-    })
+      body: JSON.stringify(Object.assign({}, formData, { plan: "pending", refCode: theRefCode, fingerprint: getFingerprint() }))    })
     .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
     .then(function(res) {
       if (!res.ok) { showErr3(res.data.error || "Erreur creation"); return; }
@@ -623,7 +668,6 @@ function confirmPlan() {
     .catch(function(e) { showErr3("Erreur reseau : " + e.message); });
   }
 }
-
 function showErr3(msg) {
   document.getElementById("step3-content").innerHTML = "<div style='font-size:40px;margin-bottom:12px'>❌</div><div style='font-size:16px;font-weight:700'>Une erreur est survenue</div>";
   var el = document.getElementById("err3");
@@ -726,6 +770,18 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
 
   const url = req.url.split('?')[0];
+  // ── RATE LIMIT /teams/create ──
+if (url === '/teams/create' && req.method === 'POST') {
+  const rlIp = (req.headers['x-forwarded-for']||'').split(',')[0].trim() || req.socket.remoteAddress || 'unknown';
+  const rlNow = Date.now();
+  const rlEntry = global._rateLimitMap.get(rlIp) || [];
+  const rlRecent = rlEntry.filter(t => rlNow - t < 60000);
+  if (rlRecent.length >= 3) {
+    jsonResp(res, 429, { error: 'Trop de tentatives. Attendez quelques minutes.' });
+    return;
+  }
+  global._rateLimitMap.set(rlIp, [...rlRecent, rlNow]);
+}
 
   // ── HTML principal ──
 // ── Page inscription publique ──
@@ -951,46 +1007,168 @@ const raw = [
 
   // ── Proxy Gemini : /api ──
   // ── Teams : /teams/create ──
-  if (req.method === 'POST' && url === '/teams/create') {
-    try {
-      const { teamName, adminLogin, adminPass, adminName, expiresAt, plan } = await parseBody(req);
-      if (!teamName || !adminLogin || !adminPass) {
-        jsonResp(res, 400, { error: 'teamName, adminLogin, adminPass requis' }); return;
-      }
-      const users = readDB('users');
-      if (users.find(u => u.login === adminLogin)) {
-        jsonResp(res, 400, { error: 'Identifiant déjà utilisé' }); return;
-      }
-      const teamId = 'team_' + Date.now();
-      const adminId = 'user_' + Date.now() + '_admin';
-      const teams = readDB('teams');
-      teams.push({
-        id: teamId, name: teamName, ownerId: adminId,
-        createdAt: new Date().toISOString().split('T')[0],
-        subscription: {
-          status: 'active',
-          expiresAt: expiresAt || null,
-          plan: 'starter'
-        }
-      });
-      users.push({
-        id: adminId, login: adminLogin, name: adminName || adminLogin,
-        pass: adminPass, role: 'admin', teamId,
-        created: new Date().toISOString().split('T')[0]
-      });
-writeDB('teams', teams);
-      writeDB('users', users);
-      // Initialiser les crédits selon le plan choisi
-      const planKey = plan || 'free';
-      const planDef = PLANS[planKey] || PLANS.free;
-      addCredits(teamId, planDef.credits, `Inscription — plan ${planDef.name}`, planKey);
-      console.log(`  ✅ Équipe créée : ${teamName} (admin: ${adminLogin}) — plan: ${planKey} (${planDef.credits} crédits)`);
-      jsonResp(res, 200, { ok: true, teamId, adminId });
-    } catch(err) {
-      jsonResp(res, 500, { error: err.message });
+if (req.method === 'POST' && url === '/teams/create') {
+  try {
+    const { teamName, adminLogin, adminPass, adminName, expiresAt, plan, refCode, fingerprint } = await parseBody(req);
+    console.log('🛡️ CREATE TEAM tentative:', {
+  teamName, adminLogin,
+  fingerprint: fingerprint || 'ABSENT',
+  plan: plan || 'free'
+});
+    if (!teamName || !adminLogin || !adminPass) {
+      jsonResp(res, 400, { error: 'teamName, adminLogin, adminPass requis' }); return;
     }
+
+    // ── ANTI-ABUS : 1 compte gratuit max par IP par 24h ──
+// Remplace tout le bloc ── ANTI-ABUS ── dans /teams/create par ceci :
+
+const clientIp = (req.headers['x-forwarded-for']||'').split(',')[0].trim()
+
+  || req.headers['x-real-ip']
+  || req.socket.remoteAddress
+  || 'unknown';
+
+const planKey = plan || 'free';
+console.log('🌐 IP détectée:', clientIp, '| FP:', fingerprint || 'ABSENT');
+
+
+if (planKey !== 'superadmin') {
+  const IP_FILE = path.join(DATA_DIR, 'ip_registry.json');
+  const WINDOW_MS = 24 * 60 * 60 * 1000;
+  const now = Date.now();
+
+  let ipRegistry = {};
+  try {
+    if (fs.existsSync(IP_FILE)) {
+      ipRegistry = JSON.parse(fs.readFileSync(IP_FILE, 'utf8'));
+    }
+  } catch(e) { ipRegistry = {}; }
+
+  // Nettoyer les entrées expirées
+  for (const ip of Object.keys(ipRegistry)) {
+    if (Array.isArray(ipRegistry[ip])) {
+      ipRegistry[ip] = ipRegistry[ip].filter(t => now - t < WINDOW_MS);
+      if (!ipRegistry[ip].length) delete ipRegistry[ip];
+    }
+  }
+
+  const fp = fingerprint || '';
+
+  // Clés de détection multicouches
+  const keysToCheck = [
+    clientIp !== 'unknown' && clientIp !== '::1' && clientIp !== '127.0.0.1' ? clientIp : null,
+    fp ? 'fp_' + fp : null,
+  ].filter(Boolean);
+
+  // Extraire le /24 du subnet pour détecter partage de connexion
+  const ipv4Match = clientIp.match(/^(\d+\.\d+\.\d+)\.\d+$/);
+  if (ipv4Match) {
+    keysToCheck.push('subnet_' + ipv4Match[1]);
+  }
+
+  // Vérifier si l'une des clés est déjà bloquée
+  for (const key of keysToCheck) {
+    const attempts = ipRegistry[key] || [];
+    // Subnet plus permissif : 3 comptes max par /24
+    const limit = key.startsWith('subnet_') ? 3 : 1;
+    if (attempts.length >= limit) {
+      jsonResp(res, 429, {
+        error: 'Un compte a déjà été créé depuis cet appareil ou réseau aujourd\'hui. Connectez-vous à votre compte existant ou contactez le support au 07 59 53 64 75.'
+      });
+      return;
+    }
+  }
+
+  // Vérifier aussi le nom d'équipe similaire dans les 24h
+  const teams = readDB('teams');
+  const recentFromSameNetwork = teams.filter(t => {
+    const tKey = 'team_ip_' + t.id;
+    return ipRegistry[tKey] && ipRegistry[tKey].some(entry => {
+      if (typeof entry === 'object') {
+        return (keysToCheck.includes(entry.ip) || keysToCheck.includes('fp_' + entry.fp)) && (now - entry.ts < WINDOW_MS);
+      }
+      return false;
+    });
+  });
+  if (recentFromSameNetwork.length >= 2) {
+    jsonResp(res, 429, {
+      error: 'Trop de comptes créés depuis ce réseau. Contactez le support au 07 59 53 64 75.'
+    });
     return;
   }
+
+  // Enregistrer toutes les clés
+  for (const key of keysToCheck) {
+    const attempts = ipRegistry[key] || [];
+    ipRegistry[key] = [...attempts, now];
+  }
+
+  // Enregistrer le login
+  const loginKey = 'login_' + adminLogin.toLowerCase();
+  ipRegistry[loginKey] = [now];
+
+  // Enregistrer IP+FP liés à cette équipe (pour détection réseau)
+  const teamTrackKey = 'team_ip_team_' + Date.now();
+  ipRegistry[teamTrackKey] = [{ ip: clientIp, fp, ts: now }];
+
+  try {
+    fs.writeFileSync(IP_FILE, JSON.stringify(ipRegistry, null, 2), 'utf8');
+  } catch(e) {
+    console.error('Erreur écriture ip_registry:', e.message);
+  }
+}
+    // ── FIN ANTI-ABUS ──
+
+const users = readDB('users');
+if (users.find(u => u.login === adminLogin)) {
+  jsonResp(res, 400, { error: 'Identifiant déjà utilisé' }); return;
+}
+const teams = readDB('teams');
+const recentTeam = teams.find(t =>
+  t.name && t.name.toLowerCase() === teamName.toLowerCase() &&
+  t.createdAt >= new Date(Date.now() - 24*60*60*1000).toISOString().split('T')[0]
+);
+if (recentTeam) {
+  jsonResp(res, 400, { error: 'Une équipe avec ce nom a déjà été créée aujourd\'hui.' });
+  return;
+}
+const teamId = 'team_' + Date.now();
+const adminId = 'user_' + Date.now() + '_admin';
+
+
+    teams.push({
+      id: teamId, name: teamName, ownerId: adminId,
+      createdAt: new Date().toISOString().split('T')[0],
+      subscription: { status: 'active', expiresAt: expiresAt || null, plan: 'starter' }
+    });
+    users.push({
+      id: adminId, login: adminLogin, name: adminName || adminLogin,
+      pass: adminPass, role: 'admin', teamId,
+      refCode: refCode || null,
+      created: new Date().toISOString().split('T')[0]
+    });
+    writeDB('teams', teams);
+    writeDB('users', users);
+    if (refCode) {
+      const affiliates = readDB('affiliates') || [];
+      const aff = affiliates.find(a => a.code === refCode);
+      if (aff) {
+        if (!aff.referredTeams) aff.referredTeams = [];
+        aff.referredTeams.push({ teamId, teamName, adminLogin, joinedAt: new Date().toISOString() });
+        writeDB('affiliates', affiliates);
+        console.log(`🔗 Filleul enregistré : ${teamName} (ref: ${refCode})`);
+      }
+    }
+    const planDef = PLANS[planKey] || PLANS.free;
+    addCredits(teamId, planDef.credits, `Inscription — plan ${planDef.name}`, planKey);
+    console.log(`  ✅ Équipe créée : ${teamName} (admin: ${adminLogin}) — plan: ${planKey} (${planDef.credits} crédits) — IP: ${clientIp}`);
+    sendTelegram(`🆕 <b>Nouvelle inscription</b>\n🏢 ${teamName}\n👤 ${adminLogin}\n📦 Plan : ${planDef.name}\n🔗 Ref : ${refCode || 'aucune'}${refCode ? ' ✅' : ''}\n🌐 IP : ${clientIp}\n🕐 ${new Date().toLocaleString('fr-FR')}`);
+    jsonResp(res, 200, { ok: true, teamId, adminId });
+  } catch(err) {
+    jsonResp(res, 500, { error: err.message });
+  }
+  return;
+}
 
   // ── Teams : GET /teams ──
   if (req.method === 'GET' && url === '/teams') {
@@ -1050,8 +1228,14 @@ writeDB('teams', teams);
         jsonResp(res, status, { error:{ type:'api_error', message:`Gemini ${status}: ${msg}` } }); return;
       }
       const out = geminiToAnthropic(gR);
-      console.log(`  ✓ /api — ${out.content.filter(b=>b.type==='tool_use').length} recherche(s) · ${new Date().toLocaleTimeString()}`);
-      jsonResp(res, 200, out);
+const searchCount = out.content.filter(b=>b.type==='tool_use').length;
+console.log(`  ✓ /api — ${searchCount} recherche(s) · ${new Date().toLocaleTimeString()}`);
+const now = Date.now();
+if(now - lastScanNotif > 60000) {
+  lastScanNotif = now;
+  sendTelegram(`🔍 <b>Scanner IA lancé</b>\n🕐 ${new Date().toLocaleString('fr-FR')}`);
+}
+jsonResp(res, 200, out);
     } catch(err) {
       console.error('  ✗ /api:', err.message);
       jsonResp(res, 500, { error:{ message:err.message } });
@@ -1170,13 +1354,21 @@ if (req.method === 'POST' && url === '/affiliate/register') {
     if (!teamName || !adminLogin || !adminPass) {
       jsonResp(res, 400, { error: 'Champs requis manquants' }); return;
     }
-    const users = readDB('users');
-    if (users.find(u => u.login === adminLogin)) {
-      jsonResp(res, 400, { error: 'Identifiant déjà utilisé' }); return;
-    }
-    const teamId = 'team_' + Date.now();
-    const adminId = 'user_' + Date.now() + '_admin';
-    const teams = readDB('teams');
+const users = readDB('users');
+if (users.find(u => u.login === adminLogin)) {
+  jsonResp(res, 400, { error: 'Identifiant déjà utilisé' }); return;
+}
+const teams = readDB('teams');
+const recentTeam = teams.find(t =>
+  t.name && t.name.toLowerCase() === teamName.toLowerCase() &&
+  t.createdAt >= new Date(Date.now() - 24*60*60*1000).toISOString().split('T')[0]
+);
+if (recentTeam) {
+  jsonResp(res, 400, { error: 'Une équipe avec ce nom a déjà été créée aujourd\'hui.' });
+  return;
+}
+const teamId = 'team_' + Date.now();
+const adminId = 'user_' + Date.now() + '_admin';
     teams.push({
       id: teamId, name: teamName, ownerId: adminId,
       createdAt: new Date().toISOString().split('T')[0],
@@ -1238,7 +1430,8 @@ if (req.method === 'POST' && url === '/affiliate/deposit') {
           from: user.name || user.login, createdAt: deposit.createdAt
         });
         writeDB('affiliates', affiliates);
-        console.log(`💸 Commission +${commission}€ pour affilié ${aff.userId}`);
+console.log(`💸 Commission +${commission}€ pour affilié ${aff.userId}`);
+sendTelegram(`💸 <b>Commission d'affiliation</b>\n👤 Filleul : ${user.name || user.login}\n💰 Dépôt : ${amount}€\n📈 Commission : +${commission}€\n🕐 ${new Date().toLocaleString('fr-FR')}`);
       }
     }
     jsonResp(res, 200, { ok: true, deposit });
@@ -1373,12 +1566,48 @@ if (req.method === 'POST' && url === '/stripe/confirm') {
         planLabel   = `Achat plan ${plan.name}`;
       }
 
-      const entry = addCredits(teamId, creditCount, planLabel, planId || 'recharge');
-      const teams = readDB('teams');
-      const team = teams.find(t => t.id === teamId);
-      if (team && planId) { team.plan = planId; writeDB('teams', teams); }
-      console.log(`  💳 Paiement confirmé — ${planLabel} (${creditCount} crédits) pour team ${teamId}`);
-      jsonResp(res, 200, { ok: true, credits: entry });
+const entry = addCredits(teamId, creditCount, planLabel, planId || 'recharge');
+const teams = readDB('teams');
+const team = teams.find(t => t.id === teamId);
+if (team && planId) { team.plan = planId; writeDB('teams', teams); }
+
+// ── COMMISSION AFFILIÉ ──
+const allUsers = readDB('users') || [];
+const payingUser = allUsers.find(u => u.id === userId || u.teamId === teamId);
+if (payingUser && payingUser.refCode) {
+  const affiliates = readDB('affiliates') || [];
+  const aff = affiliates.find(a => a.code === payingUser.refCode);
+  if (aff) {
+    const realAmount = amount ? parseFloat(amount) : (PLANS[planId]?.price || 0);
+    const commission = Math.round(realAmount * 0.20 * 100) / 100;
+    aff.balance = Math.round(((aff.balance || 0) + commission) * 100) / 100;
+    aff.totalEarned = Math.round(((aff.totalEarned || 0) + commission) * 100) / 100;
+    if (!aff.commissionHistory) aff.commissionHistory = [];
+    aff.commissionHistory.push({
+      depositId: 'stripe_' + Date.now(),
+      amount: realAmount,
+      commission,
+      from: payingUser.name || payingUser.login,
+      createdAt: new Date().toISOString()
+    });
+    writeDB('affiliates', affiliates);
+    // Enregistrer aussi dans deposits
+    const deposits = readDB('deposits') || [];
+    deposits.push({
+      id: 'dep_' + Date.now(), userId, teamId,
+      amount: realAmount,
+      description: planLabel,
+      createdAt: new Date().toISOString()
+    });
+    writeDB('deposits', deposits);
+    console.log(`💸 Commission +${commission}€ pour affilié ${aff.userId} (filleul: ${payingUser.login})`);
+    sendTelegram(`💸 <b>Commission affilié</b>\n👤 Filleul : ${payingUser.name || payingUser.login}\n💰 Dépôt : ${realAmount}€\n📈 Commission : +${commission}€`);
+  }
+}
+
+console.log(`  💳 Paiement confirmé — ${planLabel} (${creditCount} crédits) pour team ${teamId}`);
+sendTelegram(`💳 <b>Paiement reçu</b>\n📦 ${planLabel}\n⚡ ${creditCount} crédits\n🏢 Team : ${teamId}\n🕐 ${new Date().toLocaleString('fr-FR')}`);
+jsonResp(res, 200, { ok: true, credits: entry });
     } catch(err) { jsonResp(res, 500, { error: err.message }); }
     return;
   }

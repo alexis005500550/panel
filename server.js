@@ -28,7 +28,7 @@ const PLANS = {
 
 
 if (!global._rateLimitMap) global._rateLimitMap = new Map();
-const DATA_DIR = path.join(__dirname, 'data');
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const WA_DIR   = path.join(__dirname, 'wa_session');
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });

@@ -161,7 +161,7 @@ html,body{height:100%;font-family:var(--font);background:var(--surface);color:va
 .filter-chips{display:flex;gap:4px;padding:8px 10px;border-bottom:1px solid var(--border);flex-wrap:wrap;flex-shrink:0;background:var(--white)}
 .chip{padding:3px 10px;border-radius:20px;font-size:11px;border:1px solid var(--border);cursor:pointer;background:transparent;color:var(--text3);font-weight:500;transition:all .12s;white-space:nowrap}
 .chip:hover{border-color:var(--border2);color:var(--text)}
-.chip.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.chip.active{background:var(--blue);color:#fff!important;border-color:var(--blue)}
 .contact-list{overflow-y:auto;flex:1}
 .contact-item{padding:11px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s;display:flex;align-items:flex-start;gap:9px}
 .contact-item:hover{background:var(--surface)}
@@ -560,20 +560,54 @@ a{color:inherit}
 <body>
 
 <!-- LOGIN -->
+<!-- LOGIN -->
 <div class="login-screen" id="login-screen">
-  <div class="login-bg"></div>
-  <div class="login-card fi">
-<div class="login-wordmark"><img src="logo.png" style="height:52px;object-fit:contain;filter:brightness(0) invert(1)"/></div>
+  <div style="position:absolute;inset:0;background:radial-gradient(ellipse 800px 500px at 50% -80px,rgba(28,84,240,0.22) 0%,transparent 65%),#0D0F14"></div>
 
+  <div class="login-card fi" style="position:relative;width:400px;padding:44px 40px;border-radius:20px;background:#12151f;box-shadow:8px 8px 32px rgba(0,0,0,0.7),-4px -4px 16px rgba(255,255,255,0.03),0 0 0 1px rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.07)">
 
-    <div class="login-sub">Plateforme CRM — Accès réservé</div>
-    <div class="login-err" id="login-err">Identifiants incorrects. Veuillez réessayer.</div>
-    <label class="login-label">Identifiant</label>
-    <input class="login-input" id="li-user" placeholder="Votre identifiant" autocomplete="username"/>
-    <label class="login-label">Mot de passe</label>
-    <input class="login-input" id="li-pass" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/>
-    <button class="login-btn" id="login-btn" onclick="doLogin()">Se connecter</button>
-    <div class="login-footer">PushProspect CRM · <a href="/register" style="color:rgba(100,140,255,0.7);text-decoration:none">Créer un compte</a></div>
+    <!-- Logo -->
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:36px">
+      <img src="logo.png" style="height: 45px;;object-fit:contain;filter:brightness(0) invert(1)"/>
+    </div>
+
+    <!-- Titre -->
+    <div style="margin-bottom:32px">
+      <div style="font-size:21px;font-weight:700;letter-spacing:-0.5px;color:#fff;margin-bottom:5px">Connexion</div>
+      <div style="font-size:12.5px;color:rgba(255,255,255,0.25);letter-spacing:0.1px">Accès réservé — plateforme CRM</div>
+    </div>
+
+    <!-- Erreur -->
+    <div class="login-err" id="login-err" style="display:none;background:#0D0F14;box-shadow:inset 3px 3px 8px rgba(0,0,0,0.5),inset -2px -2px 6px rgba(255,255,255,0.02);border:1px solid rgba(220,38,38,0.2);border-radius:10px;padding:10px 14px;font-size:12px;color:#f87171;margin-bottom:16px">
+      Identifiants incorrects. Veuillez réessayer.
+    </div>
+
+    <!-- Identifiant -->
+    <div style="margin-bottom:16px">
+      <label style="font-size:10.5px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;font-weight:600;display:block;margin-bottom:8px">Identifiant</label>
+      <input class="login-input" id="li-user" placeholder="Votre identifiant" autocomplete="username"
+        style="width:100%;padding:13px 16px;border-radius:12px;border:none;outline:none;font-size:13.5px;font-family:inherit;color:#fff;background:#131620;box-shadow:inset 3px 3px 8px rgba(0,0,0,0.6),inset -2px -2px 5px rgba(255,255,255,0.04);caret-color:#1C54F0;letter-spacing:0.1px"/>
+    </div>
+
+    <!-- Mot de passe -->
+    <div style="margin-bottom:28px">
+      <label style="font-size:10.5px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;font-weight:600;display:block;margin-bottom:8px">Mot de passe</label>
+      <input class="login-input" id="li-pass" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"
+        style="width:100%;padding:13px 16px;border-radius:12px;border:none;outline:none;font-size:13.5px;font-family:inherit;color:#fff;background:#131620;box-shadow:inset 3px 3px 8px rgba(0,0,0,0.6),inset -2px -2px 5px rgba(255,255,255,0.04);caret-color:#1C54F0;letter-spacing:0.3px"/>
+    </div>
+
+    <!-- Bouton -->
+    <button class="login-btn" id="login-btn" onclick="doLogin()"
+      style="width:100%;padding:13px;border-radius:12px;border:none;font-size:13.5px;font-family:inherit;font-weight:700;letter-spacing:0.3px;cursor:pointer;color:#fff;background:#1C54F0;box-shadow:4px 4px 14px rgba(0,0,0,0.5),-2px -2px 8px rgba(255,255,255,0.025),0 0 0 1px rgba(28,84,240,0.4);transition:all .18s">
+      Se connecter
+    </button>
+
+    <!-- Footer -->
+    <div style="margin-top:28px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:11px;color:rgba(255,255,255,0.14)">PushProspect CRM</span>
+      <a href="/register" style="font-size:11px;color:rgba(28,84,240,0.6);text-decoration:none">Créer un compte →</a>
+    </div>
+
   </div>
 </div>
 
@@ -874,8 +908,39 @@ a{color:inherit}
             <option value="fleuriste">Fleuriste</option><option value="pharmacie">Pharmacie</option>
             <option value="bar café brasserie">Bar / Café</option><option value="vétérinaire">Vétérinaire</option>
             <option value="agence immobilière">Agence immobilière</option><option value="pizzeria">Pizzeria</option>
-            <option value="auto-école">Auto-école</option>
+<option value="auto-école">Auto-école</option>
 <option value="expert-comptable">Expert-comptable</option>
+<option disabled>── Vendre le SaaS ──</option>
+<option value="freelance développeur web">Freelance développeur web</option>
+<option value="freelance designer graphique">Freelance designer graphique</option>
+<option value="freelance copywriter rédacteur">Freelance copywriter / Rédacteur</option>
+<option value="freelance community manager">Freelance community manager</option>
+<option value="freelance consultant marketing digital">Consultant marketing digital</option>
+<option value="freelance growth hacker">Growth hacker / Acquisition</option>
+<option value="setter commercial freelance">Setter commercial freelance</option>
+<option value="closer vente freelance">Closer / Vendeur freelance</option>
+<option value="coach business entrepreneur">Coach business / Entrepreneur</option>
+<option value="agence marketing digitale">Agence marketing digitale</option>
+<option value="agence création site web">Agence création site web</option>
+<option value="agence SEO référencement">Agence SEO</option>
+<option value="agence publicité facebook ads google ads">Agence Facebook/Google Ads</option>
+<option value="recruteur headhunter freelance">Recruteur / Headhunter</option>
+<option value="formateur en ligne infoproduit">Formateur en ligne / Infoproduit</option>
+<option value="dropshipper e-commerce">Dropshipper / E-commerce</option>
+<option value="apporteur affaires commercial indépendant">Apporteur d'affaires</option>
+<option value="consultant RH freelance">Consultant RH freelance</option>
+<option value="expert comptable freelance">Expert-comptable freelance</option>
+<option value="avocat indépendant cabinet">Avocat indépendant</option>
+<option value="agent immobilier indépendant">Agent immobilier indépendant</option>
+<option value="courtier assurance prêt">Courtier assurance / Prêt</option>
+<option value="traducteur interprète freelance">Traducteur / Interprète</option>
+<option value="webmaster freelance maintenance site">Webmaster freelance</option>
+<option value="monteur vidéo motion designer">Monteur vidéo / Motion design</option>
+<option value="podcasteur créateur contenu">Podcasteur / Créateur de contenu</option>
+<option value="influenceur micro-influenceur">Micro-influenceur</option>
+<option value="assistant virtuel télésecrétaire">Assistant virtuel / Télésecrétaire</option>
+<option value="data analyst freelance">Data analyst freelance</option>
+<option value="product manager freelance">Product manager freelance</option>
 <option value="institut de beauté">Institut de beauté</option>
 <option value="prothésiste ongulaire nail art">Prothésiste ongulaire / Nail art</option>
 <option value="centre esthétique épilation">Centre esthétique / Épilation</option>
@@ -2037,7 +2102,7 @@ function renderChecklist(contactId){
     ${CALL_CHECKLIST.map(item=>{
       const on=checked.includes(item.id);
       return`<div class="checklist-item${on?' done-item':''}" onclick="toggleCheck('${contactId}','${item.id}')">
-        <div class="check-box${on?' checked':`}`}">${on?`<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>`:''}</div>
+        <div class="check-box${on?' checked':''}">${on?'<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>':''}</div>
         <span class="check-lbl${on?' done-lbl':''}">${item.label}</span>
       </div>`;
     }).join('')}
@@ -2206,7 +2271,31 @@ function openEmailBlastModal(){
 function setEmailTemplate(type){
   const subjectEl=document.getElementById('eblast-subject');
   const bodyEl=document.getElementById('eblast-body');
-  if(type==='prospect'){
+  if(type==='saas'){
+    subjectEl.value='Tu cherches des clients ? Cet outil trouve 200 prospects en 5 min';
+    bodyEl.value=`Bonjour {dirigeant},
+
+Je me permets de te contacter car je pense que cet outil peut vraiment changer ta façon de prospecter.
+
+PushProspect est un CRM de prospection automatisée que j'ai développé pour les freelances, setters, closers et agences qui veulent trouver des clients sans perdre des heures à chercher manuellement.
+
+Ce que ça fait concrètement :
+→ Scanner IA qui trouve jusqu'à 200 prospects qualifiés en quelques minutes
+→ Coordonnées complètes : téléphone, email, site web, dirigeant
+→ Envoi WhatsApp et email directement depuis l'outil
+→ Pipeline de vente, agenda, rendez-vous — tout en un
+
+En gros, tu indiques une niche et une ville, et l'IA te sort une liste de prospects avec leurs coordonnées. Tu n'as plus qu'à les contacter.
+
+Je t'offre 15 prospects gratuits pour tester sans engagement.
+
+👉 panel-d1jl9g.fly.dev
+
+Tu veux voir une démo rapide ? Réponds à ce mail ou appelle-moi directement.
+
+Alexis Kechichian
+07 59 53 64 75`;
+  } else if(type==='prospect'){
     subjectEl.value='{nom} – 2 idées concrètes pour attirer plus de clients';
 bodyEl.value=`Bonjour,
 
@@ -2254,32 +2343,51 @@ Cordialement,
 }
 
 // Remplace resolveTemplate par :
+function getSenderInfo(){
+  return {
+    name: document.getElementById('sender-name')?.value?.trim() || 'Votre Nom',
+    title: document.getElementById('sender-title')?.value?.trim() || 'Directeur',
+    phone: document.getElementById('sender-phone')?.value?.trim() || '',
+    company: document.getElementById('sender-company')?.value?.trim() || 'Mon Agence',
+    tagline: document.getElementById('sender-tagline')?.value?.trim() || ''
+  };
+}
+
 function resolveSubject(template, contact){
   return template
     .replace(/\{nom\}/g, contact.biz||'votre entreprise')
     .replace(/\{ville\}/g, contact.ville||'votre ville')
-    .replace(/\{dirigeant\}/g, contact.dirigeant||'');
+    .replace(/\{dirigeant\}/g, contact.dirigeant||'')
+    .replace(/\{telephone\}/g, contact.phone||'')
+    .replace(/\{email\}/g, contact.email||'')
+    .replace(/\{site\}/g, contact.website||'pas de site');
 }
 
 function resolveTemplate(template, contact, withImage = false){
+  const s = getSenderInfo();
   const imgUrl = document.getElementById('eblast-image')?.value?.trim();
-const imgBlock = (withImage && imgUrl)
-  ? `<tr><td style="padding:0;text-align:center;background:#0d1117;line-height:0;font-size:0">
-      <div style="background:#0d1117;padding:20px 0 0 0;margin:0">
-        <img src="${imgUrl}" alt="Logo" width="90" height="90"
-          style="width:90px;height:90px;border-radius:50%;object-fit:cover;display:inline-block;border:2px solid rgba(255,255,255,0.1);"/>
-      </div>
-    </td></tr>`
-  : '';
+  const imgBlock = (withImage && imgUrl)
+    ? `<tr><td style="padding:0;text-align:center;background:#0d1117;line-height:0;font-size:0">
+        <div style="background:#0d1117;padding:20px 0 0 0;margin:0">
+          <img src="${imgUrl}" alt="Logo" width="90" height="90"
+            style="width:90px;height:90px;border-radius:50%;object-fit:cover;display:inline-block;border:2px solid rgba(255,255,255,0.1);"/>
+        </div>
+      </td></tr>`
+    : '';
 
-  const bodyText = template
+const bodyText = template
     .replace(/\{nom\}/g, contact.biz||'votre entreprise')
     .replace(/\{ville\}/g, contact.ville||'votre ville')
-    .replace(/\{dirigeant\}/g, contact.dirigeant||'')
+    .replace(/\{dirigeant\}/g, contact.dirigeant||contact.biz||'')
+    .replace(/\{telephone\}/g, contact.phone||'')
+    .replace(/\{email\}/g, contact.email||'')
+    .replace(/\{site\}/g, contact.website||'pas de site')
     .split('\n')
     .filter(l => l.trim() !== '')
     .map(line => `<p style="margin:0 0 14px 0;line-height:1.75;color:#1a1a2e;font-size:15px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif">${line}</p>`)
     .join('');
+
+  const phoneHref = s.phone.replace(/[\s.\-]/g,'');
 
   return `<!DOCTYPE html>
 <html lang="fr">
@@ -2293,8 +2401,8 @@ const imgBlock = (withImage && imgUrl)
 
       <!-- HEADER -->
       <tr><td style="background:#0d1117;padding:16px 32px;text-align:left">
-        <span style="font-size:19px;font-weight:700;color:#ffffff;letter-spacing:-0.4px">Leadsvision</span>
-        <span style="font-size:11px;color:rgba(255,255,255,0.35);margin-left:10px">Web Design &amp; Développement</span>
+        <span style="font-size:19px;font-weight:700;color:#ffffff;letter-spacing:-0.4px">${s.company}</span>
+        ${s.tagline ? `<span style="font-size:11px;color:rgba(255,255,255,0.35);margin-left:10px">${s.tagline}</span>` : ''}
       </td></tr>
 
       <!-- BODY -->
@@ -2302,9 +2410,9 @@ const imgBlock = (withImage && imgUrl)
         ${bodyText}
       </td></tr>
 
-      <!-- CTA BUTTON -->
+      <!-- CTA -->
       <tr><td style="padding:10px 36px 30px 36px;text-align:center">
-        <a href="tel:0759536475"
+        <a href="tel:${phoneHref}"
           style="display:inline-block;background:#1c54f0;color:#ffffff;text-decoration:none;
                  padding:14px 36px;border-radius:50px;font-size:15px;font-weight:700;
                  font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;letter-spacing:0.3px;
@@ -2318,18 +2426,36 @@ const imgBlock = (withImage && imgUrl)
 
       <!-- FOOTER -->
       <tr><td style="padding:22px 36px 28px;background:#f8f9fc;text-align:center">
-        <p style="margin:0 0 2px 0;font-size:14px;font-weight:700;color:#0d1117;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif">Alexis Kechichian</p>
-        <p style="margin:0 0 6px 0;font-size:12px;color:#6b7280;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif">Directeur — Leadsvision</p>
-        <p style="margin:0 0 14px 0">
-          <a href="tel:0759536475" style="font-size:13px;color:#1c54f0;text-decoration:none;font-weight:600;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif">07 59 53 64 75</a>
-        </p>
-
+        <p style="margin:0 0 2px 0;font-size:14px;font-weight:700;color:#0d1117;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif">${s.name}</p>
+        <p style="margin:0 0 6px 0;font-size:12px;color:#6b7280;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif">${s.title}</p>
+        ${s.phone ? `<p style="margin:0 0 14px 0"><a href="tel:${phoneHref}" style="font-size:13px;color:#1c54f0;text-decoration:none;font-weight:600;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif">${s.phone}</a></p>` : ''}
       </td></tr>
 
     </table>
   </td></tr>
 </table>
 </body></html>`;
+}
+
+let _previewVisible = false;
+function togglePreview(){
+  _previewVisible = !_previewVisible;
+  const wrap = document.getElementById('email-preview-wrap');
+  const btn = document.getElementById('preview-toggle-btn');
+  wrap.style.display = _previewVisible ? 'block' : 'none';
+  btn.textContent = _previewVisible ? 'Masquer l\'aperçu' : 'Afficher l\'aperçu';
+  if(_previewVisible) updatePreview();
+}
+
+function updatePreview(){
+  if(!_previewVisible) return;
+  const body = document.getElementById('eblast-body')?.value || '';
+  const fakeContact = {biz:'Restaurant Le Gourmet', ville:'Paris', dirigeant:'M. Martin'};
+  const html = resolveTemplate(body, fakeContact, true);
+  const frame = document.getElementById('email-preview-frame');
+  if(frame){
+    frame.srcdoc = html;
+  }
 }
 
 function copyEmailList(){
@@ -3317,7 +3443,7 @@ function openCreditModal(teamId, displayName, login){
   document.getElementById('credit-modal-title').textContent=`Attribuer des crédits — ${displayName}`;
   document.getElementById('credit-modal-info').innerHTML=`
     <div style="font-size:13px;color:var(--text2)">
-      <strong>${displayName}</strong>${login!=='équipe'?` (@${login})`:''}
+      <strong>${displayName}</strong>${login!=='equipe'?` (@${login})`:''}
       · Solde actuel : <strong style="color:var(--blue)">${currentBal} crédits</strong>
     </div>`;
   document.getElementById('credit-amount-input').value='100';
@@ -4010,39 +4136,99 @@ function rechargeUpdate(amt){
 </script>
 
 <!-- EMAIL BLAST MODAL -->
+<!-- EMAIL BLAST MODAL -->
 <div class="modal-overlay" id="email-blast-modal">
-  <div class="modal" style="width:600px">
+  <div class="modal" style="width:680px;max-height:90vh;overflow-y:auto">
     <div class="modal-title">Envoi groupé d'emails</div>
+
+    <!-- STATUT GMAIL -->
     <div id="gmail-status-bar" style="display:flex;align-items:center;gap:8px;margin-bottom:14px;padding:9px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);font-size:12.5px">
-  <span id="gmail-status-dot" style="width:8px;height:8px;border-radius:50%;background:var(--text3);flex-shrink:0"></span>
-  <span id="gmail-status-lbl">Gmail non connecté</span>
-  <a href="/gmail/auth" target="_blank" class="btn btn-sm btn-primary" style="margin-left:auto;text-decoration:none" onclick="setTimeout(checkGmailStatus,3000)">Connecter Gmail</a>
-</div>
-    <div id="eblast-count-info" style="font-size:12.5px;color:var(--text2);margin-bottom:14px;padding:10px 12px;background:var(--surface);border-radius:var(--radius);border:1px solid var(--border)"></div>
-    <div style="margin-bottom:11px">
-  <label class="form-label">Image d'en-tête (URL optionnelle)</label>
-  <input class="form-input" id="eblast-image" placeholder="https://ton-site.com/banniere.png"/>
-</div>
-<div style="margin-bottom:11px">
-  <label class="form-label">Objet de l'email *</label>
-  <input class="form-input" id="eblast-subject" placeholder="Création de site web pour [Votre entreprise]"/>
+      <span id="gmail-status-dot" style="width:8px;height:8px;border-radius:50%;background:var(--text3);flex-shrink:0"></span>
+      <span id="gmail-status-lbl">Gmail non connecté</span>
+      <a href="/gmail/auth" target="_blank" class="btn btn-sm btn-primary" style="margin-left:auto;text-decoration:none" onclick="setTimeout(checkGmailStatus,3000)">Connecter Gmail</a>
     </div>
+
+    <div id="eblast-count-info" style="font-size:12.5px;color:var(--text2);margin-bottom:14px;padding:10px 12px;background:var(--surface);border-radius:var(--radius);border:1px solid var(--border)"></div>
+
+    <!-- PERSONNALISATION EXPÉDITEUR -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;margin-bottom:14px">
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:12px">✏️ Personnaliser l'expéditeur</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div>
+          <label class="form-label">Votre nom complet</label>
+          <input class="form-input" id="sender-name" placeholder="Jean Dupont" value="Alexis Kechichian" oninput="updatePreview()"/>
+        </div>
+        <div>
+          <label class="form-label">Votre titre / poste</label>
+          <input class="form-input" id="sender-title" placeholder="Directeur Commercial" value="Directeur – Leadsvision" oninput="updatePreview()"/>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label class="form-label">Votre numéro de téléphone</label>
+          <input class="form-input" id="sender-phone" placeholder="07 XX XX XX XX" value="07 59 53 64 75" oninput="updatePreview()"/>
+        </div>
+        <div>
+          <label class="form-label">Nom de l'entreprise (header email)</label>
+          <input class="form-input" id="sender-company" placeholder="Mon Agence" value="Leadsvision" oninput="updatePreview()"/>
+        </div>
+      </div>
+      <div style="margin-top:10px">
+        <label class="form-label">Tagline (sous le nom dans le header)</label>
+        <input class="form-input" id="sender-tagline" placeholder="Web Design & Développement" value="Web Design & Développement" oninput="updatePreview()"/>
+      </div>
+    </div>
+
+    <!-- IMAGE HEADER -->
+    <div style="margin-bottom:11px">
+      <label class="form-label">Image d'en-tête (URL optionnelle)</label>
+      <input class="form-input" id="eblast-image" placeholder="https://ton-site.com/banniere.png" oninput="updatePreview()"/>
+    </div>
+
+    <!-- OBJET -->
+    <div style="margin-bottom:11px">
+      <label class="form-label">Objet de l'email *</label>
+      <input class="form-input" id="eblast-subject" placeholder="Sujet de votre email" oninput="updatePreview()"/>
+    </div>
+
+    <!-- CORPS -->
     <div style="margin-bottom:11px">
       <label class="form-label">Corps du message *</label>
-      <textarea class="form-input" id="eblast-body" rows="8" style="resize:vertical;line-height:1.75;font-size:13px" placeholder="Bonjour,&#10;&#10;Je me permets de vous contacter…"></textarea>
+      <textarea class="form-input" id="eblast-body" rows="7" style="resize:vertical;line-height:1.75;font-size:13px" oninput="updatePreview()"></textarea>
     </div>
-    <div class="alert alert-info" style="font-size:12px;margin-bottom:11px">
-      Variables disponibles : <code style="background:var(--blue-lt);padding:1px 5px;border-radius:3px">{nom}</code> (nom entreprise) · <code style="background:var(--blue-lt);padding:1px 5px;border-radius:3px">{ville}</code> · <code style="background:var(--blue-lt);padding:1px 5px;border-radius:3px">{dirigeant}</code><br>
-      Les emails s'ouvriront dans votre client mail (mailto:) un par un, ou vous pouvez copier la liste.
-    </div>
-    <div style="margin-bottom:11px">
+
+    <!-- TEMPLATES -->
+    <div style="margin-bottom:14px">
       <label class="form-label">Modèles rapides</label>
       <div style="display:flex;gap:5px;flex-wrap:wrap">
         <button class="chip" onclick="setEmailTemplate('prospect')">Premier contact</button>
         <button class="chip" onclick="setEmailTemplate('nosite')">Sans site web</button>
         <button class="chip" onclick="setEmailTemplate('relance')">Relance</button>
+        <button class="chip active" onclick="setEmailTemplate('saas')" style="background:var(--purple);color:#fff;border-color:var(--purple);font-weight:700">Vendre PushProspect</button>
       </div>
     </div>
+
+    <!-- VARIABLES -->
+    <div class="alert alert-info" style="font-size:12px;margin-bottom:14px">
+      Variables : <code style="background:var(--blue-lt);padding:1px 5px;border-radius:3px">{nom}</code> · <code style="background:var(--blue-lt);padding:1px 5px;border-radius:3px">{ville}</code> · <code style="background:var(--blue-lt);padding:1px 5px;border-radius:3px">{dirigeant}</code> · <code style="background:var(--blue-lt);padding:1px 5px;border-radius:3px">{telephone}</code> · <code style="background:var(--blue-lt);padding:1px 5px;border-radius:3px">{email}</code> · <code style="background:var(--blue-lt);padding:1px 5px;border-radius:3px">{site}</code>
+    </div>
+
+    <!-- PREVIEW -->
+    <div style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <label class="form-label" style="margin-bottom:0">Aperçu de l'email</label>
+        <button class="btn btn-xs btn-ghost" onclick="togglePreview()" id="preview-toggle-btn">Afficher l'aperçu</button>
+      </div>
+      <div id="email-preview-wrap" style="display:none;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;background:#f0f2f8">
+        <div style="background:var(--surface);padding:8px 14px;border-bottom:1px solid var(--border);font-size:11px;color:var(--text3);display:flex;align-items:center;gap:6px">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          Aperçu rendu
+        </div>
+        <iframe id="email-preview-frame" style="width:100%;height:480px;border:none;background:#f0f2f8" sandbox="allow-same-origin"></iframe>
+      </div>
+    </div>
+
+    <!-- ACTIONS -->
     <div class="modal-footer" style="flex-wrap:wrap;gap:7px">
       <button class="btn" onclick="closeModals()">Annuler</button>
       <button class="btn btn-ghost" onclick="copyEmailList()">
@@ -4050,7 +4236,6 @@ function rechargeUpdate(amt){
         Copier les emails
       </button>
       <button class="btn" style="background:var(--amber-lt);color:var(--amber);border-color:rgba(217,119,6,0.2)" onclick="openMailtoBlast()">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
         Ouvrir dans mon client mail
       </button>
       <button class="btn btn-primary" onclick="openMailtoOneByOne()">
@@ -4921,5 +5106,8 @@ function stopConfetti() {
 
 
 
+<script>
+if(typeof goToPlans==='undefined'){document.querySelectorAll('button').forEach(b=>{if(b.textContent.includes('Continuer'))b.onclick=function(){var s1=document.getElementById('step1');var s2=document.getElementById('step2');if(s1&&s2){s1.style.display='none';s2.style.display='block';}}});}
+</script>
 </body>
-</html>
+</html>`;

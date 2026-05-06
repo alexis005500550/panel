@@ -14,3 +14,9 @@ cpu_kind = "shared"
 cpus = 1
 memory = "1gb"
 memory_mb = 256
+[env]
+  DATA_DIR = "/app/data"
+
+[mounts]
+  source = "pushprospect_data"
+  destination = "/app/data"

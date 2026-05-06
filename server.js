@@ -312,367 +312,394 @@ function buildRegisterPage(refCode) {
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Créer mon compte — PushProspect</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<title>PushProspect — Créer un compte</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'IBM Plex Sans',sans-serif;background:#0D0F14;min-height:100vh;color:#fff;padding:40px 20px}
-.bg{position:fixed;inset:0;background:radial-gradient(ellipse 900px 600px at 50% -100px,rgba(28,84,240,0.18) 0%,transparent 70%);pointer-events:none;z-index:0}
-.wrap{position:relative;z-index:1;max-width:960px;margin:0 auto}
-.logo{font-size:22px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:10px}
-.logo-dot{width:8px;height:8px;border-radius:50%;background:#1C54F0;box-shadow:0 0 12px rgba(28,84,240,0.6)}
-.tagline{text-align:center;font-size:13px;color:rgba(255,255,255,0.35);margin-bottom:28px}
-.ref-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(28,84,240,0.12);border:1px solid rgba(28,84,240,0.25);border-radius:6px;padding:6px 14px;font-size:12px;color:rgba(100,140,255,0.9);margin:0 auto 24px;width:fit-content}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+html,body{height:100%;font-family:'IBM Plex Sans','Inter',sans-serif;color:#fff;-webkit-font-smoothing:antialiased}
+/* LAYOUT */
+.page{display:grid;grid-template-columns:1fr 1fr;min-height:100vh;background:#0D0F14}
+@media(max-width:768px){.page{grid-template-columns:1fr}}
 
-.step-indicator{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:32px}
-.step{width:32px;height:32px;border-radius:50%;border:2px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:rgba(255,255,255,0.3);transition:all .3s}
-.step.active{border-color:#1C54F0;color:#1C54F0;background:rgba(28,84,240,0.1)}
-.step.done{background:#1C54F0;border-color:#1C54F0;color:#fff}
-.step-line{flex:1;max-width:60px;height:1px;background:rgba(255,255,255,0.08)}
-.step-labels{display:flex;justify-content:center;gap:8px;margin-top:-20px;margin-bottom:28px}
-.step-lbl{width:32px;text-align:center;font-size:10px;color:rgba(255,255,255,0.25);white-space:nowrap;margin:0 30px}
+/* PANNEAU GAUCHE */
+.left{background:#0D0F14;padding:48px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
+.left::before{content:'';position:absolute;top:-200px;left:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(28,84,240,0.14) 0%,transparent 70%);pointer-events:none}
+.left::after{content:'';position:absolute;bottom:-150px;right:-100px;width:400px;height:400px;background:radial-gradient(circle,rgba(28,84,240,0.06) 0%,transparent 70%);pointer-events:none}
+@media(max-width:768px){.left{padding:32px 24px;display:none}}
+
+.logo{display:flex;align-items:center;gap:10px;margin-bottom:64px}
+.logo-icon{width:36px;height:36px;background:#0D0F14;box-shadow:4px 4px 10px rgba(0,0,0,0.7),-3px -3px 8px rgba(255,255,255,0.03),inset 0 0 0 1px rgba(28,84,240,0.25);border-radius:10px;display:flex;align-items:center;justify-content:center}
+.logo-icon svg{width:18px;height:18px}
+.logo-name{font-size:18px;font-weight:700;letter-spacing:-0.5px}
+
+.left-content{flex:1;display:flex;flex-direction:column;justify-content:center}
+.left-headline{font-size:40px;font-weight:700;letter-spacing:-1.5px;line-height:1.15;margin-bottom:16px}
+.left-headline span{background:linear-gradient(135deg,#1C54F0,#7BA4FF);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.left-sub{font-size:16px;color:rgba(255,255,255,0.45);line-height:1.7;margin-bottom:48px;max-width:380px}
+
+.features{display:flex;flex-direction:column;gap:16px}
+.feature{display:flex;align-items:flex-start;gap:14px}
+.feature-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.feature-title{font-size:14px;font-weight:600;margin-bottom:2px}
+.feature-desc{font-size:13px;color:rgba(255,255,255,0.4);line-height:1.5}
+
+.left-footer{font-size:12px;color:rgba(255,255,255,0.2);margin-top:48px}
+
+/* PANNEAU DROIT */
+.right{background:#0D0F14;display:flex;align-items:center;justify-content:center;padding:48px 40px;position:relative;border-left:1px solid rgba(255,255,255,0.04)}
+@media(max-width:768px){.right{padding:32px 20px;min-height:100vh;align-items:flex-start;padding-top:40px}}
+
+.form-container{width:100%;max-width:420px}
+
+.mobile-logo{display:none;align-items:center;gap:10px;margin-bottom:40px}
+@media(max-width:768px){.mobile-logo{display:flex}}
+.mobile-logo-icon{width:32px;height:32px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:8px;display:flex;align-items:center;justify-content:center}
+.mobile-logo-name{font-size:16px;font-weight:700}
+
+/* STEPS */
+.steps-header{margin-bottom:32px}
+.step-label{font-size:12px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-bottom:8px}
+.step-title{font-size:24px;font-weight:700;letter-spacing:-0.5px;margin-bottom:6px}
+.step-sub{font-size:14px;color:rgba(255,255,255,0.4);line-height:1.6}
+
+.progress-bar{display:flex;gap:4px;margin-bottom:32px}
+.progress-seg{height:3px;flex:1;border-radius:2px;background:rgba(255,255,255,0.08);transition:background .3s}
+.progress-seg.active{background:#1C54F0}
+.progress-seg.done{background:rgba(28,84,240,0.4)}
 
 /* FORM */
-.form-card{background:#1A1D24;border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:32px;max-width:480px;margin:0 auto}
-.form-title{font-size:18px;font-weight:700;margin-bottom:6px;letter-spacing:-0.3px}
-.form-sub{font-size:12px;color:rgba(255,255,255,0.35);margin-bottom:24px;line-height:1.6}
-.field{margin-bottom:14px}
-label{font-size:11px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;display:block;margin-bottom:6px}
-input{width:100%;padding:11px 14px;border:1px solid rgba(255,255,255,0.08);border-radius:7px;font-size:13.5px;font-family:inherit;background:rgba(255,255,255,0.04);color:#fff;outline:none;transition:all .18s}
-input:focus{border-color:rgba(28,84,240,0.6);background:rgba(28,84,240,0.08);box-shadow:0 0 0 3px rgba(28,84,240,0.12)}
-input::placeholder{color:rgba(255,255,255,0.2)}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-
-.btn-next{width:100%;padding:13px;background:#1C54F0;color:#fff;border:none;border-radius:8px;font-size:14px;font-family:inherit;font-weight:600;cursor:pointer;transition:all .18s;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px}
-.btn-next:hover{background:#1444D0;box-shadow:0 6px 20px rgba(28,84,240,0.35)}
-.btn-next:disabled{opacity:.5;cursor:not-allowed}
-
-.err-box{background:rgba(220,38,38,0.1);color:#EF4444;border:1px solid rgba(220,38,38,0.25);border-radius:7px;padding:10px 14px;font-size:12px;margin-top:12px;display:none}
-.ok-box{background:rgba(14,159,110,0.1);color:#10B981;border:1px solid rgba(14,159,110,0.25);border-radius:7px;padding:10px 14px;font-size:12px;margin-top:12px;display:none}
-.login-link{text-align:center;font-size:12px;color:rgba(255,255,255,0.3);margin-top:18px}
-.login-link a{color:rgba(100,140,255,0.8);text-decoration:none}
-.login-link a:hover{text-decoration:underline}
+.field{margin-bottom:16px}
+.field-label{font-size:12px;font-weight:500;color:rgba(255,255,255,0.5);margin-bottom:6px;display:block;letter-spacing:0.3px}
+.field-input{width:100%;padding:12px 14px;background:#131620;border:none;border-radius:12px;font-size:13.5px;font-family:'IBM Plex Sans','Inter',sans-serif;color:#fff;outline:none;transition:all .2s;box-shadow:inset 3px 3px 8px rgba(0,0,0,0.6),inset -2px -2px 5px rgba(255,255,255,0.04);caret-color:#1C54F0}
+.field-input:focus{background:#131620;box-shadow:inset 3px 3px 8px rgba(0,0,0,0.6),inset -2px -2px 5px rgba(255,255,255,0.04),0 0 0 2px rgba(28,84,240,0.4)}
+.field-input::placeholder{color:rgba(255,255,255,0.2)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 
 /* PLANS */
-.plans-title{text-align:center;font-size:20px;font-weight:700;margin-bottom:6px;letter-spacing:-0.4px}
-.plans-sub{text-align:center;font-size:13px;color:rgba(255,255,255,0.4);margin-bottom:28px}
-.plans-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-@media(max-width:800px){.plans-grid{grid-template-columns:1fr 1fr}}
-@media(max-width:480px){.plans-grid{grid-template-columns:1fr}}
+.plans{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.plan{border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 14px;cursor:pointer;transition:all .2s;position:relative;background:#12151f;box-shadow:4px 4px 10px rgba(0,0,0,0.4),-2px -2px 6px rgba(255,255,255,0.02)}
+.plan:hover{border-color:rgba(28,84,240,0.3);background:#131620}
+.plan.selected{border-color:#1C54F0;background:rgba(28,84,240,0.1);box-shadow:0 0 0 1px rgba(28,84,240,0.4),4px 4px 10px rgba(0,0,0,0.4)}
+.plan-badge{position:absolute;top:-9px;left:50%;transform:translateX(-50%);font-size:10px;font-weight:700;padding:2px 10px;border-radius:20px;white-space:nowrap;letter-spacing:0.5px;background:#1C54F0;color:#fff}
+.plan-name{font-size:13px;font-weight:600;margin-bottom:4px}
+.plan-price{font-size:22px;font-weight:300;letter-spacing:-0.8px;line-height:1;margin-bottom:2px}
+.plan-credits{font-size:11px;color:rgba(255,255,255,0.35);margin-bottom:8px}
+.plan-check{width:18px;height:18px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:9px;position:absolute;top:12px;right:12px;transition:all .2s}
+.plan.selected .plan-check{background:#6366f1;border-color:#6366f1;color:#fff}
 
-.plan-card{background:#1A1D24;border:2px solid rgba(255,255,255,0.07);border-radius:14px;padding:22px 16px 20px;cursor:pointer;transition:all .2s;position:relative;user-select:none}
-.plan-card:hover{border-color:rgba(28,84,240,0.45);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.3)}
-.plan-card.active{border-color:#1C54F0;background:rgba(28,84,240,0.12);box-shadow:0 0 0 1px #1C54F0,0 8px 32px rgba(28,84,240,0.2)}
-.popular-badge{position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:#1C54F0;color:#fff;font-size:10px;font-weight:700;padding:3px 14px;border-radius:20px;white-space:nowrap;letter-spacing:0.5px;box-shadow:0 2px 8px rgba(28,84,240,0.4)}
-.plan-check{position:absolute;top:12px;right:12px;width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:10px;transition:all .2s;background:transparent}
-.plan-card.active .plan-check{background:#1C54F0;border-color:#1C54F0;color:#fff}
-.plan-name{font-size:14px;font-weight:700;color:#fff;margin-bottom:4px}
-.plan-price{font-size:30px;font-weight:300;letter-spacing:-1.5px;color:#fff;line-height:1;margin-bottom:3px}
-.plan-price sup{font-size:15px;font-weight:500;vertical-align:top;margin-top:6px;display:inline-block}
-.plan-price-sub{font-size:11px;color:rgba(255,255,255,0.35);margin-bottom:12px}
-.plan-features{list-style:none;font-size:12px;color:rgba(255,255,255,0.5);line-height:2.1}
-.plan-features li{display:flex;align-items:center;gap:6px}
-.plan-features li::before{content:'✓';color:#1C54F0;font-weight:700;font-size:11px;flex-shrink:0}
-.plan-features li.no::before{content:'✗';color:rgba(255,255,255,0.2)}
-.plan-features li.no{color:rgba(255,255,255,0.2)}
+.plan-agency{border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:14px 16px;cursor:pointer;transition:all .2s;background:#12151f;display:flex;align-items:center;gap:12px;margin-bottom:16px;box-shadow:4px 4px 10px rgba(0,0,0,0.4),-2px -2px 6px rgba(255,255,255,0.02)}
+.plan-agency:hover{border-color:rgba(28,84,240,0.3)}
+.plan-agency.selected{border-color:#1C54F0;background:rgba(28,84,240,0.08)}
 
-.agency-card{background:linear-gradient(135deg,rgba(124,58,237,0.12),rgba(28,84,240,0.08));border-color:rgba(124,58,237,0.25);max-width:480px;margin:0 auto 24px}
-.agency-card:hover{border-color:rgba(124,58,237,0.55)}
-.agency-card.active{border-color:#7C3AED;box-shadow:0 0 0 1px #7C3AED,0 8px 32px rgba(124,58,237,0.2)}
-.agency-card.active .plan-check{background:#7C3AED;border-color:#7C3AED}
+/* BOUTON */
+.btn-main{width:100%;padding:13px;background:#1C54F0;color:#fff;border:none;border-radius:12px;font-size:13.5px;font-family:'IBM Plex Sans','Inter',sans-serif;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:0.2px;box-shadow:4px 4px 14px rgba(0,0,0,0.5),-2px -2px 8px rgba(255,255,255,0.025),0 0 0 1px rgba(28,84,240,0.4)}
+.btn-main:hover{background:#1444D0;box-shadow:0 8px 24px rgba(28,84,240,0.35)}
+.btn-main:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+.btn-back{background:none;border:none;color:rgba(255,255,255,0.3);font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;margin-top:14px;display:flex;align-items:center;gap:4px;transition:color .2s;padding:0}
+.btn-back:hover{color:rgba(255,255,255,0.6)}
 
-.plan-cta{width:100%;padding:13px;border:none;border-radius:8px;font-size:14px;font-family:inherit;font-weight:600;cursor:pointer;transition:all .18s;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:8px}
-.plan-cta-free{background:rgba(255,255,255,0.08);color:#fff}
-.plan-cta-free:hover{background:rgba(255,255,255,0.13)}
-.plan-cta-paid{background:#1C54F0;color:#fff}
-.plan-cta-paid:hover{background:#1444D0;box-shadow:0 6px 20px rgba(28,84,240,0.35)}
-.plan-cta-wa{background:#128C7E;color:#fff}
-.plan-cta-wa:hover{background:#0a7368}
-.plan-cta:disabled{opacity:.5;cursor:not-allowed}
+/* ALERTS */
+.err{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:10px 14px;font-size:13px;color:#f87171;margin-top:12px;display:none;line-height:1.5}
+.ref-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:6px;padding:5px 12px;font-size:12px;color:rgba(167,139,250,0.9);margin-bottom:20px}
+
+.login-link{text-align:center;font-size:13px;color:rgba(255,255,255,0.25);margin-top:20px}
+.login-link a{color:rgba(28,84,240,0.7);text-decoration:none;font-weight:500}
+.login-link a:hover{color:#7BA4FF}
+
+/* CONFIRMATION */
+.confirm-icon{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:28px}
 </style>
 </head>
 <body>
-<div class="bg"></div>
-<div class="wrap">
+<div class="page">
 
-  <div class="logo"><div class="logo-dot"></div>PushProspect</div>
-  <div class="tagline">CRM de prospection automatisée · Créez votre espace équipe</div>
-  ${refCode ? `<div style="text-align:center"><div class="ref-badge">🔗 Invitation partenaire · Code : <strong>${refCode}</strong></div></div>` : ''}
-
-  <!-- INDICATEUR ÉTAPES -->
-  <div class="step-indicator">
-    <div class="step active" id="s1">1</div>
-    <div class="step-line"></div>
-    <div class="step" id="s2">2</div>
-    <div class="step-line"></div>
-    <div class="step" id="s3">3</div>
-  </div>
-
-  <!-- ══ ÉTAPE 1 : COMPTE ══ -->
-  <div id="step1">
-    <div class="form-card">
-      <div class="form-title">Créer votre espace</div>
-      <div class="form-sub">Quelques secondes pour configurer votre CRM de prospection</div>
-
-      <div class="field"><label>Nom de votre équipe / agence *</label><input id="teamName" placeholder="Agence XYZ" autocomplete="organization"/></div>
-      <div class="form-grid">
-        <div class="field"><label>Prénom & Nom</label><input id="adminName" placeholder="Jean Dupont" autocomplete="name"/></div>
-        <div class="field"><label>Identifiant *</label><input id="adminLogin" placeholder="jean.dupont" autocomplete="username"/></div>
+  <!-- GAUCHE -->
+  <div class="left">
+    <div>
+      <div class="logo">
+<img src="logo.png" style="height:38px;object-fit:contain;filter:brightness(0) invert(1)"/>
       </div>
-      <div class="field"><label>Mot de passe *</label><input id="adminPass" type="password" placeholder="Min. 6 caractères" autocomplete="new-password" onkeydown="if(event.key==='Enter')goToPlans()"/></div>
-
-      <div class="err-box" id="err1"></div>
-      <button class="btn-next" onclick="goToPlans()">
-        Choisir mon offre →
-      </button>
-      <div class="login-link">Déjà un compte ? <a href="/">Se connecter</a></div>
-    </div>
-  </div>
-
-  <!-- ══ ÉTAPE 2 : PLANS ══ -->
-  <div id="step2" style="display:none">
-    <div class="plans-title">Choisissez votre offre</div>
-    <div class="plans-sub">Crédits à vie · Sans abonnement · Rechargez quand vous voulez</div>
-
-    <div class="plans-grid">
-
-      <!-- GRATUIT -->
-      <div class="plan-card" id="pc-free" onclick="selectPlan('free')">
-        <div class="plan-check" id="chk-free"></div>
-        <div class="plan-name">Gratuit</div>
-        <div class="plan-price"><sup>€</sup>0</div>
-        <div class="plan-price-sub">pour toujours</div>
-        <ul class="plan-features">
-          <li>15 crédits offerts</li>
-          <li>Scanner IA</li>
-          <li>CRM complet</li>
-          <li>WhatsApp & Email</li>
-          <li class="no">Recharge possible</li>
-        </ul>
-      </div>
-
-      <!-- STARTER -->
-      <div class="plan-card" id="pc-starter" onclick="selectPlan('starter')">
-        <div class="plan-check" id="chk-starter"></div>
-        <div class="plan-name">Starter</div>
-        <div class="plan-price"><sup>€</sup>25</div>
-        <div class="plan-price-sub">250 crédits · 0,10€/lead</div>
-        <ul class="plan-features">
-          <li>250 crédits</li>
-          <li>Scanner IA</li>
-          <li>CRM complet</li>
-          <li>WhatsApp & Email</li>
-          <li>Recharge possible</li>
-        </ul>
-      </div>
-
-      <!-- PRO — POPULAIRE -->
-      <div class="plan-card" id="pc-pro" onclick="selectPlan('pro')">
-        <div class="popular-badge">⚡ POPULAIRE</div>
-        <div class="plan-check" id="chk-pro"></div>
-        <div class="plan-name">Pro</div>
-        <div class="plan-price"><sup>€</sup>50</div>
-        <div class="plan-price-sub">500 crédits · 0,10€/lead</div>
-        <ul class="plan-features">
-          <li>500 crédits</li>
-          <li>Scanner IA</li>
-          <li>CRM complet</li>
-          <li>WhatsApp & Email</li>
-          <li>Recharge possible</li>
-        </ul>
-      </div>
-
-      <!-- BUSINESS -->
-      <div class="plan-card" id="pc-business" onclick="selectPlan('business')">
-        <div class="plan-check" id="chk-business"></div>
-        <div class="plan-name">Business</div>
-        <div class="plan-price"><sup>€</sup>150</div>
-        <div class="plan-price-sub">1 500 crédits · 0,10€/lead</div>
-        <ul class="plan-features">
-          <li>1 500 crédits</li>
-          <li>Scanner IA</li>
-          <li>CRM complet</li>
-          <li>WhatsApp & Email</li>
-          <li>Recharge possible</li>
-        </ul>
-      </div>
-
     </div>
 
-    <!-- AGENCE -->
-    <div class="plan-card agency-card" id="pc-agency" onclick="selectPlan('agency')">
-      <div class="plan-check" id="chk-agency"></div>
-      <div style="display:flex;align-items:center;gap:14px">
-        <div style="font-size:28px">🏢</div>
+    <div class="left-content">
+      <div class="left-headline">Trouvez vos clients.<br><span>Automatiquement.</span></div>
+      <div class="left-sub">Le CRM de prospection qui scanne le web, trouve vos prospects qualifiés et vous aide à les convertir — en quelques minutes.</div>
+
+<div style="display:flex;flex-direction:column;gap:0;margin-top:8px">
+      <div style="display:flex;align-items:center;gap:16px;padding:16px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+        <div style="width:40px;height:40px;border-radius:10px;background:#0D0F14;border:1px solid rgba(28,84,240,0.25);box-shadow:4px 4px 10px rgba(0,0,0,0.6),-2px -2px 6px rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1C54F0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+        </div>
         <div>
-          <div class="plan-name" style="font-size:15px">Agence / Entreprise — Leads illimités</div>
-          <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:3px">Volume illimité · Tarif sur mesure · Support prioritaire · Contactez-nous pour un devis</div>
+          <div style="font-size:13.5px;font-weight:600;color:#fff;margin-bottom:3px">Scanner IA multi-sources</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.35);line-height:1.5">Pages Jaunes, Google Maps, LinkedIn, Facebook — jusqu'à 200 prospects en un clic</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;padding:16px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+        <div style="width:40px;height:40px;border-radius:10px;background:#0D0F14;border:1px solid rgba(18,140,126,0.25);box-shadow:4px 4px 10px rgba(0,0,0,0.6),-2px -2px 6px rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#128C7E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div>
+          <div style="font-size:13.5px;font-weight:600;color:#fff;margin-bottom:3px">WhatsApp & Email intégrés</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.35);line-height:1.5">Templates personnalisés, envoi direct depuis l'outil, suivi des relances</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;padding:16px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+        <div style="width:40px;height:40px;border-radius:10px;background:#0D0F14;border:1px solid rgba(217,119,6,0.25);box-shadow:4px 4px 10px rgba(0,0,0,0.6),-2px -2px 6px rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="8.01" y2="14"/><line x1="12" y1="14" x2="12.01" y2="14"/><line x1="16" y1="14" x2="16.01" y2="14"/></svg>
+        </div>
+        <div>
+          <div style="font-size:13.5px;font-weight:600;color:#fff;margin-bottom:3px">Agenda & Rendez-vous</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.35);line-height:1.5">Suivi setter/closer, rappels automatiques, pipeline de vente complet</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;padding:16px 0">
+        <div style="width:40px;height:40px;border-radius:10px;background:#0D0F14;border:1px solid rgba(124,58,237,0.25);box-shadow:4px 4px 10px rgba(0,0,0,0.6),-2px -2px 6px rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        </div>
+        <div>
+          <div style="font-size:13.5px;font-weight:600;color:#fff;margin-bottom:3px">Statistiques & Pipeline</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.35);line-height:1.5">Taux de conversion, activité en temps réel, vue Kanban drag & drop</div>
         </div>
       </div>
     </div>
+    </div>
 
-    <div style="max-width:480px;margin:0 auto">
-      <div class="err-box" id="err2"></div>
-      <button class="btn-next" id="plan-confirm-btn" onclick="confirmPlan()" disabled>
-        Confirmer mon choix →
-      </button>
-      <div style="text-align:center;margin-top:12px">
-        <button onclick="backToStep1()" style="background:none;border:none;color:rgba(255,255,255,0.3);font-size:12px;cursor:pointer;font-family:inherit">← Retour</button>
+    <div class="left-footer">© 2025 PushProspect · Alexis Kechichian · 07 59 53 64 75</div>
+  </div>
+
+  <!-- DROITE -->
+  <div class="right">
+    <div class="form-container">
+
+      <div class="mobile-logo">
+        <div class="mobile-logo-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </div>
+        <span class="mobile-logo-name">PushProspect</span>
       </div>
+
+      ${refCode ? `<div class="ref-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Invitation partenaire · Code <strong>${refCode}</strong></div>` : ''}
+
+      <!-- ÉTAPE 1 -->
+      <div id="step1">
+        <div class="progress-bar">
+          <div class="progress-seg active" id="seg1"></div>
+          <div class="progress-seg" id="seg2"></div>
+          <div class="progress-seg" id="seg3"></div>
+        </div>
+        <div class="steps-header">
+          <div class="step-label">Étape 1 sur 3</div>
+          <div class="step-title">Créer votre espace</div>
+          <div class="step-sub">Quelques secondes pour démarrer votre prospection</div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">Prénom & Nom</label>
+            <input class="field-input" id="adminName" placeholder="Jean Dupont" autocomplete="name"/>
+          </div>
+          <div class="field">
+            <label class="field-label">Identifiant *</label>
+            <input class="field-input" id="adminLogin" placeholder="jean.dupont" autocomplete="username"/>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">Nom de votre équipe / agence *</label>
+          <input class="field-input" id="teamName" placeholder="Agence XYZ, Mon activité…" autocomplete="organization"/>
+        </div>
+        <div class="field">
+          <label class="field-label">Mot de passe *</label>
+          <input class="field-input" id="adminPass" type="password" placeholder="Min. 6 caractères" autocomplete="new-password" onkeydown="if(event.key==='Enter')goToPlans()"/>
+        </div>
+
+        <div class="err" id="err1"></div>
+        <button class="btn-main" onclick="goToPlans()" style="margin-top:8px">
+          Continuer
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="login-link">Déjà un compte ? <a href="/">Se connecter</a></div>
+      </div>
+
+      <!-- ÉTAPE 2 -->
+      <div id="step2" style="display:none">
+        <div class="progress-bar">
+          <div class="progress-seg done"></div>
+          <div class="progress-seg active"></div>
+          <div class="progress-seg"></div>
+        </div>
+        <div class="steps-header">
+          <div class="step-label">Étape 2 sur 3</div>
+          <div class="step-title">Choisir votre offre</div>
+          <div class="step-sub">Crédits à vie · Sans abonnement · Rechargez quand vous voulez</div>
+        </div>
+
+        <div class="plans">
+          <div class="plan" id="pc-free" onclick="selectPlan('free')">
+            <div class="plan-check" id="chk-free"></div>
+            <div class="plan-name">Gratuit</div>
+            <div class="plan-price">0<span style="font-size:14px;color:rgba(255,255,255,0.4)">€</span></div>
+            <div class="plan-credits">15 crédits offerts</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.3);line-height:1.5">Scanner IA · CRM · WhatsApp</div>
+          </div>
+          <div class="plan" id="pc-starter" onclick="selectPlan('starter')">
+            <div class="plan-check" id="chk-starter"></div>
+            <div class="plan-name">Starter</div>
+            <div class="plan-price">25<span style="font-size:14px;color:rgba(255,255,255,0.4)">€</span></div>
+            <div class="plan-credits">250 crédits</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.3);line-height:1.5">Tout Gratuit + Recharge</div>
+          </div>
+          <div class="plan" id="pc-pro" onclick="selectPlan('pro')" style="position:relative">
+            <div class="plan-badge" style="background:#6366f1;color:#fff">⚡ Populaire</div>
+            <div class="plan-check" id="chk-pro"></div>
+            <div class="plan-name" style="margin-top:8px">Pro</div>
+            <div class="plan-price">50<span style="font-size:14px;color:rgba(255,255,255,0.4)">€</span></div>
+            <div class="plan-credits">500 crédits</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.3);line-height:1.5">Tout Starter inclus</div>
+          </div>
+          <div class="plan" id="pc-business" onclick="selectPlan('business')">
+            <div class="plan-check" id="chk-business"></div>
+            <div class="plan-name">Business</div>
+            <div class="plan-price">150<span style="font-size:14px;color:rgba(255,255,255,0.4)">€</span></div>
+            <div class="plan-credits">1 500 crédits</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.3);line-height:1.5">Tout Pro inclus</div>
+          </div>
+        </div>
+
+        <div class="plan-agency" id="pc-agency" onclick="selectPlan('agency')">
+          <div style="width:36px;height:36px;border-radius:8px;background:rgba(139,92,246,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          </div>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:600;margin-bottom:2px">Agence — Leads illimités</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.35)">Tarif sur mesure · Contactez-nous</div>
+          </div>
+          <div class="plan-check" id="chk-agency"></div>
+        </div>
+
+        <div class="err" id="err2"></div>
+        <button class="btn-main" id="plan-confirm-btn" onclick="confirmPlan()" disabled>
+          Confirmer
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <button class="btn-back" onclick="backToStep1()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          Retour
+        </button>
+      </div>
+
+      <!-- ÉTAPE 3 -->
+      <div id="step3" style="display:none">
+        <div class="progress-bar">
+          <div class="progress-seg done"></div>
+          <div class="progress-seg done"></div>
+          <div class="progress-seg active"></div>
+        </div>
+        <div id="step3-content"></div>
+        <div class="err" id="err3"></div>
+      </div>
+
     </div>
   </div>
-
-  <!-- ══ ÉTAPE 3 : CONFIRMATION ══ -->
-  <div id="step3" style="display:none">
-    <div class="form-card" style="text-align:center;max-width:440px">
-      <div id="step3-content"></div>
-      <div class="err-box" id="err3"></div>
-    </div>
-  </div>
-
 </div>
 
 <script>
-function getFingerprint() {
-  var canvas = document.createElement('canvas');
-  var ctx = canvas.getContext('2d');
-  ctx.textBaseline = 'top';
-  ctx.font = '14px Arial';
-  ctx.fillText('fp', 2, 2);
-  var data = [
-    navigator.userAgent,
-    navigator.language,
-    screen.width + 'x' + screen.height,
-    screen.colorDepth,
-    new Date().getTimezoneOffset(),
-    navigator.hardwareConcurrency || '',
-    navigator.platform || '',
-    canvas.toDataURL().slice(-50)
-  ].join('|');
-  var hash = 0;
-  for (var i = 0; i < data.length; i++) {
-    hash = ((hash << 5) - hash) + data.charCodeAt(i);
-    hash = hash & hash;
+function getFingerprint(){try{var c=document.createElement('canvas');var x=c.getContext('2d');x.fillText('fp',2,2);var d=[navigator.userAgent,navigator.language,screen.width+'x'+screen.height,screen.colorDepth,new Date().getTimezoneOffset(),navigator.hardwareConcurrency||'',c.toDataURL().slice(-50)].join('|');var h=0;for(var i=0;i<d.length;i++){h=((h<<5)-h)+d.charCodeAt(i);h=h&h;}return Math.abs(h).toString(36);}catch(e){return Math.random().toString(36);}}
+
+var PLANS_DATA={free:{name:'Gratuit',credits:15,price:0},starter:{name:'Starter',credits:250,price:25},pro:{name:'Pro',credits:500,price:50},business:{name:'Business',credits:1500,price:150},agency:{name:'Agence',credits:0,price:0}};
+var selectedPlan=null;
+var formData={};
+
+function goToPlans(){
+  try{
+    var teamName=(document.getElementById('teamName').value||'').trim();
+    var adminLogin=(document.getElementById('adminLogin').value||'').trim();
+    var adminPass=document.getElementById('adminPass').value||'';
+    var adminName=(document.getElementById('adminName').value||'').trim();
+    var err=document.getElementById('err1');
+    err.style.display='none';
+    if(!teamName){err.textContent='Le nom de lequipe est obligatoire.';err.style.display='block';return;}
+    if(!adminLogin){err.textContent='Lidentifiant est obligatoire.';err.style.display='block';return;}
+    if(adminPass.length<6){err.textContent='Mot de passe : 6 caractères minimum.';err.style.display='block';return;}
+formData.teamName=teamName;
+    formData.adminLogin=adminLogin;
+    formData.adminPass=adminPass;
+    formData.adminName=adminName;
+    document.getElementById('step1').style.display='none';
+    document.getElementById('step2').style.display='block';
+  }catch(e){
+    var errEl=document.getElementById('err1');
+    if(errEl){errEl.textContent='Erreur: '+e.message;errEl.style.display='block';}
+    console.error('goToPlans error:',e);
   }
-  return Math.abs(hash).toString(36);
 }
 
-var PLANS_DATA = {
-  free:     { name:"Gratuit",           credits:15,   price:0   },
-  starter:  { name:"Starter",           credits:250,  price:25  },
-  pro:      { name:"Pro",               credits:500,  price:50  },
-  business: { name:"Business",          credits:1500, price:150 },
-  agency:   { name:"Agence/Entreprise", credits:0,    price:0   }
-};
-
-var selectedPlan = null;
-var formData = {};
-
-function goToPlans() {
-  var teamName   = (document.getElementById("teamName").value   || "").trim();
-  var adminLogin = (document.getElementById("adminLogin").value || "").trim();
-  var adminPass  =  document.getElementById("adminPass").value  || "";
-  var adminName  = (document.getElementById("adminName").value  || "").trim();
-  var err = document.getElementById("err1");
-  err.style.display = "none";
-
-  if (!teamName)        { err.textContent = "Le nom de l'equipe est obligatoire."; err.style.display = "block"; return; }
-  if (!adminLogin)      { err.textContent = "L'identifiant est obligatoire.";      err.style.display = "block"; return; }
-  if (adminPass.length < 6) { err.textContent = "Mot de passe : 6 caracteres minimum."; err.style.display = "block"; return; }
-
-  formData = { teamName: teamName, adminLogin: adminLogin, adminPass: adminPass, adminName: adminName };
-
-  document.getElementById("step1").style.display = "none";
-  document.getElementById("step2").style.display = "block";
-  document.getElementById("s1").className = "step done";
-  document.getElementById("s2").className = "step active";
+function backToStep1(){
+  document.getElementById('step2').style.display='none';
+  document.getElementById('step1').style.display='block';
 }
 
-function backToStep1() {
-  document.getElementById("step2").style.display = "none";
-  document.getElementById("step1").style.display = "block";
-  document.getElementById("s1").className = "step active";
-  document.getElementById("s2").className = "step";
-}
-
-function selectPlan(id) {
-  selectedPlan = id;
-  ["free","starter","pro","business","agency"].forEach(function(p) {
-    var card = document.getElementById("pc-" + p);
-    var chk  = document.getElementById("chk-" + p);
-    if (card) card.classList.remove("active");
-    if (chk)  chk.textContent = "";
+function selectPlan(id){
+  selectedPlan=id;
+  ['free','starter','pro','business','agency'].forEach(function(p){
+    var card=document.getElementById('pc-'+p);
+    var chk=document.getElementById('chk-'+p);
+    if(card)card.classList.remove('selected');
+    if(chk)chk.textContent='';
   });
-  var card = document.getElementById("pc-" + id);
-  var chk  = document.getElementById("chk-" + id);
-  if (card) card.classList.add("active");
-  if (chk)  chk.textContent = "✓";
-  document.getElementById("plan-confirm-btn").disabled = false;
-  document.getElementById("err2").style.display = "none";
+  var card=document.getElementById('pc-'+id);
+  var chk=document.getElementById('chk-'+id);
+  if(card)card.classList.add('selected');
+  if(chk)chk.textContent='✓';
+  document.getElementById('plan-confirm-btn').disabled=false;
+  document.getElementById('err2').style.display='none';
 }
 
-function confirmPlan() {
-  if (!selectedPlan) return;
+function confirmPlan(){
+  if(!selectedPlan)return;
+  if(selectedPlan==='agency'){
+window.open('https://wa.me/33759536475?text='+encodeURIComponent('Bonjour, je suis interesse par loffre Agence PushProspect. Equipe : '+formData.teamName),'_blank');
 
-  if (selectedPlan === "agency") {
-    window.open("https://wa.me/33759536475?text=" + encodeURIComponent("Bonjour, offre Agence PushProspect. Equipe : " + formData.teamName), "_blank");
     return;
   }
+  document.getElementById('step2').style.display='none';
+  document.getElementById('step3').style.display='block';
+  var s3=document.getElementById('step3-content');
+  var theRefCode='${refCode}';
 
-  document.getElementById("step2").style.display = "none";
-  document.getElementById("step3").style.display = "block";
-  document.getElementById("s2").className = "step done";
-  document.getElementById("s3").className = "step active";
-
-  var s3 = document.getElementById("step3-content");
-  var theRefCode = "` + refCode + `";
-
-  if (selectedPlan === "free") {
-    s3.innerHTML = "<div style='font-size:18px;font-weight:700;margin-bottom:8px'>Creation en cours...</div>";
-fetch("/teams/create", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(Object.assign({}, formData, { plan: "free", refCode: theRefCode, fingerprint: getFingerprint() }))    })
-    .then(function(r) { return r.json().then(function(d) { return { status: r.status, ok: r.ok, data: d }; }); })
-    .then(function(res) {
-      if (res.status === 429) {
-        showErr3("Un compte a déjà été créé depuis votre connexion internet aujourd'hui. Connectez-vous à votre compte existant sur la page d'accueil, ou contactez le support : 07 59 53 64 75");
-        return;
-      }
-      if (!res.ok) { showErr3(res.data.error || "Erreur creation"); return; }
-      s3.innerHTML = "<div style='font-size:20px;font-weight:700;margin-bottom:8px;color:#10B981'>Compte cree !</div><div style='font-size:13px;color:rgba(255,255,255,0.5)'>15 credits offerts. Redirection...</div>";
-      setTimeout(function() { window.location.href = "/"; }, 2000);
+  if(selectedPlan==='free'){
+    s3.innerHTML='<div style="text-align:center;padding:20px 0"><div style="width:56px;height:56px;border-radius:50%;background:rgba(99,102,241,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 16px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg></div><div style="font-size:18px;font-weight:700;margin-bottom:6px">Création en cours…</div><div style="font-size:13px;color:rgba(255,255,255,0.35)">Votre espace se prépare</div></div>';
+    fetch('/teams/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({},formData,{plan:'free',refCode:theRefCode}))})
+    .then(function(r){return r.json().then(function(d){return{status:r.status,ok:r.ok,data:d};});})
+    .then(function(res){
+      if(res.status===429){showErr3('Un compte a déjà été créé depuis votre connexion. Contactez le support : 07 59 53 64 75');return;}
+      if(!res.ok){showErr3(res.data.error||'Erreur création');return;}
+      s3.innerHTML='<div style="text-align:center;padding:20px 0"><div style="width:64px;height:64px;border-radius:50%;background:rgba(16,185,129,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 20px"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div><div style="font-size:22px;font-weight:700;margin-bottom:8px">Compte créé !</div><div style="font-size:14px;color:rgba(255,255,255,0.4);margin-bottom:24px">15 crédits offerts · Redirection en cours…</div></div>';
+      setTimeout(function(){window.location.href='/';},2000);
     })
-    .catch(function(e) { showErr3("Erreur reseau : " + e.message); });
-
+    .catch(function(e){showErr3('Erreur réseau : '+e.message);});
   } else {
-    s3.innerHTML = "<div style='font-size:18px;font-weight:700;margin-bottom:8px'>Redirection paiement...</div>";
-    fetch("/teams/create", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(Object.assign({}, formData, { plan: "pending", refCode: theRefCode, fingerprint: getFingerprint() }))    })
-    .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
-    .then(function(res) {
-      if (!res.ok) { showErr3(res.data.error || "Erreur creation"); return; }
-      return fetch("/stripe/create-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planId: selectedPlan, teamId: res.data.teamId, userId: res.data.adminId, refCode: theRefCode })
-      });
+    s3.innerHTML='<div style="text-align:center;padding:20px 0"><div style="width:56px;height:56px;border-radius:50%;background:rgba(99,102,241,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 16px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg></div><div style="font-size:18px;font-weight:700;margin-bottom:6px">Redirection paiement…</div><div style="font-size:13px;color:rgba(255,255,255,0.35)">Vous allez être redirigé vers Stripe</div></div>';
+    fetch('/teams/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({},formData,{plan:'pending',refCode:theRefCode}))})
+    .then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d};});})
+    .then(function(res){
+      if(!res.ok){showErr3(res.data.error||'Erreur création');return;}
+      return fetch('/stripe/create-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({planId:selectedPlan,teamId:res.data.teamId,userId:res.data.adminId,refCode:theRefCode})});
     })
-    .then(function(r) { if (!r) return; return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
-    .then(function(res) {
-      if (!res || !res.ok || !res.data.url) { showErr3((res && res.data.error) || "Erreur Stripe"); return; }
-      window.location.href = res.data.url;
+    .then(function(r){if(!r)return;return r.json().then(function(d){return{ok:r.ok,data:d};});})
+    .then(function(res){
+      if(!res||!res.ok||!res.data.url){showErr3((res&&res.data.error)||'Erreur Stripe');return;}
+      window.location.href=res.data.url;
     })
-    .catch(function(e) { showErr3("Erreur reseau : " + e.message); });
+    .catch(function(e){showErr3('Erreur réseau : '+e.message);});
   }
 }
-function showErr3(msg) {
-  document.getElementById("step3-content").innerHTML = "<div style='font-size:40px;margin-bottom:12px'>❌</div><div style='font-size:16px;font-weight:700'>Une erreur est survenue</div>";
-  var el = document.getElementById("err3");
-  el.textContent = msg;
-  el.style.display = "block";
+
+function showErr3(msg){
+  document.getElementById('step3-content').innerHTML='<div style="text-align:center;padding:20px 0"><div style="width:56px;height:56px;border-radius:50%;background:rgba(239,68,68,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 16px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><div style="font-size:18px;font-weight:700;margin-bottom:6px">Une erreur est survenue</div></div>';
+  var el=document.getElementById('err3');
+  el.textContent=msg;
+  el.style.display='block';
 }
 </script>
 </body>

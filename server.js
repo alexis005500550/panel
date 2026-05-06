@@ -1528,16 +1528,17 @@ if (req.method === 'POST' && url === '/stripe/create-session') {
         const creditsCount = credits || Math.round((amount / 10) * 100);
         productName = `PushProspect — ${creditsCount} crédits`;
         unitAmount = Math.round(amount * 100);
-        successUrl = `http://localhost:${PORT}/?payment=success&amount=${amount}&credits=${creditsCount}&teamId=${teamId || ''}&userId=${userId || ''}`;
-        cancelUrl  = `http://localhost:${PORT}/`;
+const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
+successUrl = `${BASE_URL}/?payment=success&amount=${amount}&credits=${creditsCount}&teamId=${teamId || ''}&userId=${userId || ''}`;
+cancelUrl  = `${BASE_URL}/`;
       } else {
         // Plan fixe depuis l'inscription
         const plan = PLANS[planId];
         if (!plan || plan.price === 0) { jsonResp(res, 400, { error: 'Plan invalide ou gratuit' }); return; }
         productName = `PushProspect — ${plan.name} (${plan.credits} crédits)`;
         unitAmount  = plan.price * 100;
-        successUrl  = `http://localhost:${PORT}/?payment=success&planId=${planId}&teamId=${teamId || ''}&userId=${userId || ''}&refCode=${refCode || ''}`;
-        cancelUrl   = `http://localhost:${PORT}/register${refCode ? '?ref=' + refCode : ''}`;
+successUrl  = `${BASE_URL}/?payment=success&planId=${planId}&teamId=${teamId || ''}&userId=${userId || ''}&refCode=${refCode || ''}`;
+cancelUrl   = `${BASE_URL}/register${refCode ? '?ref=' + refCode : ''}`;
       }
 
       const bodyStr = new URLSearchParams({

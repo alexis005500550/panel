@@ -541,20 +541,13 @@ a{color:inherit}
 .dot:nth-child(2) { animation-delay: 0.2s; }
 .dot:nth-child(3) { animation-delay: 0.4s; }
 
-@keyframes bolt-pulse {
-  0%,100%{opacity:0.5;transform:scale(1)}
-  50%{opacity:1;transform:scale(1.15)}
-}
-@keyframes bolt-ring {
-  0%,100%{transform:scale(1);opacity:0.4}
-  50%{transform:scale(1.4);opacity:0}
-}
-@keyframes bolt-zap {
-  0%,80%,100%{opacity:1;transform:scale(1)}
-  40%{opacity:0.3;transform:scale(0.8)}
-  60%{opacity:1;transform:scale(1.2)}
-}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes loadStepIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+@keyframes loadDot{0%,80%,100%{transform:scale(0.6);opacity:0.3}40%{transform:scale(1);opacity:1}}
+@keyframes loadCheckPop{0%{transform:scale(0)}70%{transform:scale(1.2)}100%{transform:scale(1)}}
+@keyframes card-shine{0%,100%{opacity:0;transform:translateX(-100%) skewX(-15deg)}40%,60%{opacity:1;transform:translateX(150%) skewX(-15deg)}}
+@keyframes card-pulse{0%,100%{box-shadow:0 0 0 0 rgba(28,84,240,0.4)}50%{box-shadow:0 0 0 4px rgba(28,84,240,0)}}
+@keyframes chip-blink{0%,80%,100%{opacity:1}40%{opacity:0.4}}
 </style>
 </head>
 <body>
@@ -751,14 +744,14 @@ a{color:inherit}
 
 
   <div style="display:flex;align-items:center;gap:7px">
-    <!-- Éclair animé -->
-    <div style="position:relative;width:22px;height:22px;flex-shrink:0">
-      <div style="position:absolute;inset:0;border-radius:50%;background:rgba(28,84,240,0.2);animation:bolt-ring 1.8s ease-in-out infinite"></div>
-      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="#7BA4FF" style="animation:bolt-zap 1.8s ease-in-out infinite">
-          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-        </svg>
-      </div>
+    <!-- Icône carte crédit animée -->
+    <div style="position:relative;width:20px;height:14px;flex-shrink:0;border-radius:2px;background:linear-gradient(135deg,#1C54F0 0%,#3a7bd5 100%);animation:card-pulse 2.4s ease-in-out infinite;overflow:hidden;box-shadow:0 1px 4px rgba(28,84,240,0.5)">
+      <!-- Bande magnétique -->
+      <div style="position:absolute;top:3px;left:0;right:0;height:3px;background:rgba(0,0,0,0.25)"></div>
+      <!-- Puce -->
+      <div style="position:absolute;bottom:2px;left:3px;width:5px;height:3px;border-radius:1px;background:rgba(255,210,80,0.9);animation:chip-blink 2.4s ease-in-out infinite"></div>
+      <!-- Brillance qui passe -->
+      <div style="position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.35) 50%,transparent 100%);animation:card-shine 2.4s ease-in-out infinite"></div>
     </div>
     <!-- Nombre -->
     <span style="font-size:14px;font-weight:600;color:rgba(255,255,255,0.8);font-variant-numeric:tabular-nums;letter-spacing:-0.3px" id="sb-credits-val">—</span>
@@ -787,25 +780,6 @@ a{color:inherit}
 
 <!-- MAIN -->
 <div class="main">
-  <!-- STAT BAR -->
-  <div class="statbar">
-    <div class="stat-cell">
-      <div class="stat-val" id="s1">0</div>
-      <div class="stat-lbl">Entreprises</div>
-    </div>
-    <div class="stat-cell">
-      <div class="stat-val" style="color:var(--red)" id="s2">0</div>
-      <div class="stat-lbl">Prospects chauds</div>
-    </div>
-    <div class="stat-cell">
-      <div class="stat-val" style="color:var(--amber)" id="s3">0</div>
-      <div class="stat-lbl">Devis en cours</div>
-    </div>
-    <div class="stat-cell">
-      <div class="stat-val" style="color:var(--wa)" id="s4">0</div>
-      <div class="stat-lbl">Messages WA (7j)</div>
-    </div>
-  </div>
 
   <!-- TOPBAR -->
   <div class="topbar">
@@ -1496,9 +1470,11 @@ function renderRdv(){
   const qualColors=['','var(--red)','var(--amber)','var(--blue)'];
   const qualLabels=['','Chaud','Tiède','Froid'];
   const t=today();
-  let list=rdvList.filter(r=>rdvFilter==='all'?true:r.status===rdvFilter);
+  const _tidRdv=getTeamId();
+  const myRdv=rdvList.filter(r=>isSuperAdmin()||(r.teamId===_tidRdv));
+  let list=myRdv.filter(r=>rdvFilter==='all'?true:r.status===rdvFilter);
   list=list.sort((a,b)=>a.date.localeCompare(b.date));
-  const total=rdvList.length,pending=rdvList.filter(r=>r.status==='pending').length,done=rdvList.filter(r=>r.status==='done').length,today_rdv=rdvList.filter(r=>r.date===t).length;
+  const total=myRdv.length,pending=myRdv.filter(r=>r.status==='pending').length,done=myRdv.filter(r=>r.status==='done').length,today_rdv=myRdv.filter(r=>r.date===t).length;
   document.getElementById('rdv-stats').innerHTML=`
     <div class="stat-card"><div class="stat-card-val" style="color:var(--blue)">${total}</div><div class="stat-card-lbl">Total RDV</div></div>
     <div class="stat-card"><div class="stat-card-val" style="color:var(--amber)">${pending}</div><div class="stat-card-lbl">En attente</div></div>
@@ -1608,7 +1584,7 @@ async function sendWhatsApp(){
   showToast(`Message envoyé à ${c.biz}`,true);
 }
 function addWaMessage(c,msg,method){
-  const entry={id:Date.now()+Math.random(),contactId:c.id,contactName:c.biz,phone:c.phone,niche:c.niche||'',ville:c.ville||'',situation:waCurrentSituation,templateId:waSelectedTemplateId,message:msg,sentAt:new Date().toISOString(),sentDate:today(),user:currentUser?.name||'?',method};
+  const entry={id:Date.now()+Math.random(),contactId:c.id,contactName:c.biz,phone:c.phone,niche:c.niche||'',ville:c.ville||'',situation:waCurrentSituation,templateId:waSelectedTemplateId,message:msg,sentAt:new Date().toISOString(),sentDate:today(),user:currentUser?.name||'?',method,teamId:getTeamId()};
   messages.unshift(entry);if(messages.length>500)messages=messages.slice(0,500);
   saveMessages();logActivity(`WhatsApp envoyé à ${c.biz}`,'whatsapp');
 }
@@ -1638,7 +1614,13 @@ function showToast(msg,ok){
 // ══ SERVER PERSISTENCE ══
 async function serverLoad(key){try{const r=await fetch('/db/'+key);if(!r.ok)return null;const j=await r.json();return j.data;}catch(e){return null;}}
 async function serverSave(key,data){try{await fetch('/db/'+key,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data})});}catch(e){}}
-async function checkServerAlive(){try{const r=await fetch('/health',{signal:AbortSignal.timeout(2000)});return r.ok;}catch(e){return false;}}
+async function checkServerAlive(){
+  for(let i=0;i<3;i++){
+    try{const r=await fetch('/health',{signal:AbortSignal.timeout(5000)});if(r.ok)return true;}catch(e){}
+    if(i<2)await new Promise(r=>setTimeout(r,800));
+  }
+  return false;
+}
 function _lsSet(key,data){try{localStorage.setItem(key,JSON.stringify(data));}catch(e){}}
 async function load(){
   const serverOk=await checkServerAlive().catch(()=>false);
@@ -1687,7 +1669,7 @@ function saveMessages(){_lsSet(SK_MESSAGES,messages);serverSave('messages',messa
 
 // ══ EMAIL TRACKING ══
 function recordSentEmail(contact,subject,method){
-  const entry={
+const entry={
     id:Date.now()+Math.random(),
     contactId:contact.id||null,
     biz:contact.biz||'—',
@@ -1701,7 +1683,8 @@ function recordSentEmail(contact,subject,method){
     sentDate:today(),
     sentBy:currentUser?.name||'?',
     status:'sent',
-    relances:[]
+    relances:[],
+    teamId:getTeamId()
   };
   sentEmails.unshift(entry);
   if(sentEmails.length>2000)sentEmails=sentEmails.slice(0,2000);
@@ -1721,12 +1704,16 @@ function isAlreadyEmailed(r){
 }
 
 function renderEmailView(){
-  const total=sentEmails.length;
+  const tid=getTeamId();
+  const myEmails=isSuperAdmin()?sentEmails:sentEmails.filter(e=>e.teamId===tid);
+  const total=myEmails.length;
   const today7=new Date();today7.setDate(today7.getDate()-7);
-  const last7=sentEmails.filter(e=>e.sentDate>=today7.toISOString().split('T')[0]).length;
-  const relanceTotal=sentEmails.reduce((acc,e)=>acc+(e.relances||[]).length,0);
-  const q=(document.getElementById('email-search')?.value||'').toLowerCase();
-  const list=sentEmails.filter(e=>!q||`${e.biz} ${e.email} ${e.ville} ${e.niche}`.toLowerCase().includes(q));
+  const last7=myEmails.filter(e=>e.sentDate>=today7.toISOString().split('T')[0]).length;
+  const relanceTotal=myEmails.reduce((acc,e)=>acc+(e.relances||[]).length,0);
+const q=(document.getElementById('email-search')?.value||'').toLowerCase();
+  const list=myEmails.filter(e=>{
+    return !q||`${e.biz} ${e.email} ${e.ville} ${e.niche}`.toLowerCase().includes(q);
+  });
 
   const el=document.getElementById('view-emails');
   el.innerHTML=`
@@ -1748,7 +1735,7 @@ function renderEmailView(){
         <div class="stat-card"><div class="stat-card-val" style="color:var(--blue)">${total}</div><div class="stat-card-lbl">Emails envoyés total</div></div>
         <div class="stat-card"><div class="stat-card-val" style="color:var(--teal)">${last7}</div><div class="stat-card-lbl">Envoyés (7 jours)</div></div>
         <div class="stat-card"><div class="stat-card-val" style="color:var(--amber)">${relanceTotal}</div><div class="stat-card-lbl">Relances effectuées</div></div>
-        <div class="stat-card"><div class="stat-card-val" style="color:var(--green)">${new Set(sentEmails.map(e=>e.email)).size}</div><div class="stat-card-lbl">Contacts uniques</div></div>
+        <div class="stat-card"><div class="stat-card-val" style="color:var(--green)">${new Set(myEmails.map(e=>e.email)).size}</div><div class="stat-card-lbl">Contacts uniques</div></div>
       </div>
 
       <div class="search-wrap" style="max-width:100%;margin-bottom:12px">
@@ -1940,45 +1927,73 @@ async function doLogin(){
     currentUser=u;
     sessionStorage.setItem(SK_SESSION,JSON.stringify(u));
 
+    const _loadSteps=[
+      {id:'ls1',label:'Authentification'},
+      {id:'ls2',label:'Chargement des données'},
+      {id:'ls3',label:'Préparation de l\'interface'},
+    ];
+    const _userName=(u.name||u.login||'').split(' ')[0];
+
     const overlay=document.createElement('div');
     overlay.id='app-loading-overlay';
-    overlay.style.cssText=`position:fixed;inset:0;background:#0D0F14;z-index:9998;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;transition:opacity .5s ease`;
+    overlay.style.cssText=`position:fixed;inset:0;background:#0D0F14;z-index:9998;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .5s ease`;
     overlay.innerHTML=`
-      <div style="position:relative;width:56px;height:56px">
-        <svg width="56" height="56" viewBox="0 0 56 56" fill="none" style="position:absolute;inset:0;animation:spin .9s linear infinite">
-          <circle cx="28" cy="28" r="24" stroke="rgba(28,84,240,0.15)" stroke-width="3"/>
-          <path d="M28 4a24 24 0 0 1 24 24" stroke="#1C54F0" stroke-width="3" stroke-linecap="round"/>
-        </svg>
-        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="#7BA4FF"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:0;width:280px">
+        <img src="logo.png" style="height:30px;object-fit:contain;filter:brightness(0) invert(1);opacity:0.85;margin-bottom:36px"/>
+        <div style="font-size:20px;font-weight:700;color:#fff;letter-spacing:-0.5px;margin-bottom:4px;font-family:'IBM Plex Sans',sans-serif">Bonjour, ${_userName}</div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.3);margin-bottom:40px;font-family:'IBM Plex Sans',sans-serif">Votre espace se prépare…</div>
+        <div style="display:flex;flex-direction:column;gap:14px;width:100%;margin-bottom:40px">
+          ${_loadSteps.map((s,i)=>`
+          <div id="${s.id}" style="display:flex;align-items:center;gap:12px;opacity:0;animation:loadStepIn .35s ease forwards ${.15+i*.12}s">
+            <div id="${s.id}-ic" style="width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(28,84,240,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .3s">
+              <span style="display:flex;gap:2px">
+                <span style="width:3px;height:3px;border-radius:50%;background:#1C54F0;animation:loadDot 1.2s ease-in-out infinite;animation-delay:${i*.15}s"></span>
+                <span style="width:3px;height:3px;border-radius:50%;background:#1C54F0;animation:loadDot 1.2s ease-in-out infinite;animation-delay:${i*.15+.2}s"></span>
+                <span style="width:3px;height:3px;border-radius:50%;background:#1C54F0;animation:loadDot 1.2s ease-in-out infinite;animation-delay:${i*.15+.4}s"></span>
+              </span>
+            </div>
+            <span id="${s.id}-lbl" style="font-size:13px;color:rgba(255,255,255,0.4);font-family:'IBM Plex Sans',sans-serif;transition:color .3s">${s.label}</span>
+          </div>`).join('')}
         </div>
-      </div>
-      <div style="font-size:13px;color:rgba(255,255,255,0.3);letter-spacing:0.5px;font-family:'IBM Plex Sans',sans-serif">Chargement de l'espace de travail…</div>
-      <div style="width:180px;height:2px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden">
-        <div id="app-load-bar" style="height:100%;background:#1C54F0;border-radius:2px;width:0%;transition:width .4s ease"></div>
+        <div style="width:100%;height:1px;background:rgba(255,255,255,0.05);border-radius:1px;overflow:hidden">
+          <div id="app-load-bar" style="height:100%;background:linear-gradient(90deg,#1C54F0,#7BA4FF);border-radius:1px;width:0%;transition:width .5s ease"></div>
+        </div>
       </div>`;
     document.body.appendChild(overlay);
 
     document.getElementById('login-screen').style.display='none';
     document.getElementById('main-app').style.display='flex';
 
+    const _stepThresholds=[30,70,95];
+    let _stepDone=[-1];
     let pct=0;
     const barInterval=setInterval(()=>{
-      pct=Math.min(pct+(Math.random()*18+6),90);
+      pct=Math.min(pct+(Math.random()*14+5),90);
       const bar=document.getElementById('app-load-bar');
       if(bar)bar.style.width=pct+'%';
-    },180);
+      _loadSteps.forEach((s,i)=>{
+        if(pct>=_stepThresholds[i]&&!_stepDone.includes(i)){
+          _stepDone.push(i);
+          const ic=document.getElementById(s.id+'-ic');
+          const lbl=document.getElementById(s.id+'-lbl');
+          if(ic){ic.style.background='rgba(16,185,129,0.12)';ic.style.borderColor='rgba(16,185,129,0.4)';ic.innerHTML=`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" style="animation:loadCheckPop .3s ease"><polyline points="20 6 9 17 4 12"/></svg>`;}
+          if(lbl){lbl.style.color='rgba(255,255,255,0.75)';}
+        }
+      });
+    },160);
 
-    await initApp();
-
-    clearInterval(barInterval);
-    const bar=document.getElementById('app-load-bar');
-    if(bar)bar.style.width='100%';
-    setTimeout(()=>{
-      overlay.style.opacity='0';
-      setTimeout(()=>overlay.remove(),500);
-    },300);
-    resetBtn();
+    try {
+      await initApp();
+    } finally {
+      clearInterval(barInterval);
+      const bar=document.getElementById('app-load-bar');
+      if(bar)bar.style.width='100%';
+      setTimeout(()=>{
+        overlay.style.opacity='0';
+        setTimeout(()=>overlay.remove(),500);
+      },300);
+      resetBtn();
+    }
 
   } catch(err) {
     // Fallback local si le serveur est inaccessible
@@ -2134,7 +2149,11 @@ function isDup(r,list){
   for(const e of list){if(rp&&rp.length>7&&normPhone(e.phone||'')===rp)return true;if(r.biz&&e.biz&&simNames(r.biz,e.biz))return true;}
   return false;
 }
-function isBlocked(r){return isDup(r,blocked);}
+function isBlocked(r){
+  const tid=getTeamId();
+  const myBlocked=isSuperAdmin()?blocked:blocked.filter(b=>b.teamId===tid);
+  return isDup(r,myBlocked);
+}
 
 // ══ JSON PARSER ══
 function extractEnterprises(text){
@@ -2272,26 +2291,29 @@ function setEmailTemplate(type){
   const subjectEl=document.getElementById('eblast-subject');
   const bodyEl=document.getElementById('eblast-body');
   if(type==='saas'){
-    subjectEl.value='Tu cherches des clients ? Cet outil trouve 200 prospects en 5 min';
+    subjectEl.value='200 prospects qualifiés en 5 min — essai gratuit sans CB';
     bodyEl.value=`Bonjour {dirigeant},
 
-Je me permets de te contacter car je pense que cet outil peut vraiment changer ta façon de prospecter.
+La prospection manuelle, c'est terminé.
 
-PushProspect est un CRM de prospection automatisée que j'ai développé pour les freelances, setters, closers et agences qui veulent trouver des clients sans perdre des heures à chercher manuellement.
+Combien d'heures par semaine passez-vous à chercher des prospects, noter des numéros, envoyer des messages un par un ?
 
-Ce que ça fait concrètement :
-→ Scanner IA qui trouve jusqu'à 200 prospects qualifiés en quelques minutes
-→ Coordonnées complètes : téléphone, email, site web, dirigeant
+PushProspect automatise tout ça — en quelques clics.
+
+En moins de 5 minutes, notre scanner IA trouve jusqu'à 200 entreprises qualifiées dans votre niche avec :
+→ Nom, téléphone, email et site web de chaque prospect
 → Envoi WhatsApp et email directement depuis l'outil
-→ Pipeline de vente, agenda, rendez-vous — tout en un
+→ CRM intégré : pipeline, agenda, relances, rendez-vous
 
-En gros, tu indiques une niche et une ville, et l'IA te sort une liste de prospects avec leurs coordonnées. Tu n'as plus qu'à les contacter.
+Que vous soyez freelance, agence, créateur de sites ou commercial B2B, c'est fait pour vous.
 
-Je t'offre 15 prospects gratuits pour tester sans engagement.
+Inscription en 1 minute. Aucune carte bancaire requise.
+15 crédits offerts pour tester librement.
 
-👉 panel-d1jl9g.fly.dev
+Créez votre compte gratuit ici :
+→ pushprospect.com
 
-Tu veux voir une démo rapide ? Réponds à ce mail ou appelle-moi directement.
+Une question ? Répondez à ce mail ou appelez-moi directement.
 
 Alexis Kechichian
 07 59 53 64 75`;
@@ -2819,7 +2841,7 @@ function scanActionRecall(){
 }
 function scanActionBlock(){
   const r=scanResults[scanActionIdx];if(!r)return;
-  blocked.push({...r,blockedAt:today(),blockedBy:currentUser?.name||'?'});saveBlocked();
+blocked.push({...r, blockedAt:today(), blockedBy:currentUser?.name||'?', teamId:getTeamId()});saveBlocked();
   logActivity(`Non intéressé : ${r.biz}`,'block');renderAll();
   _finishScanAction('Exclu','var(--red-lt)','var(--red)');
 }
@@ -2862,8 +2884,12 @@ function addAllResults(){
 // ══ BLOCKED ══
 function renderBlocked(){
   const q=(document.getElementById('blocked-search')?.value||'').toLowerCase();
-  const list=blocked.filter(b=>!q||`${b.biz||''} ${b.phone||''} ${b.ville||''}`.toLowerCase().includes(q));
-  document.getElementById('blocked-count-lbl').textContent=`(${blocked.length})`;
+  const tid=getTeamId();
+  const list=blocked.filter(b=>{
+    if(!isSuperAdmin()&&b.teamId!==tid)return false;
+    return !q||`${b.biz||''} ${b.phone||''} ${b.ville||''}`.toLowerCase().includes(q);
+  });
+  document.getElementById('blocked-count-lbl').textContent=`(${list.length})`;
   const el=document.getElementById('blocked-list');
   if(!list.length){el.innerHTML='<div style="text-align:center;padding:32px;color:var(--text3);font-size:13px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg)">Aucun contact non intéressé</div>';return;}
   el.innerHTML=list.map((b)=>{
@@ -2995,6 +3021,8 @@ function renderAgenda(){
   const mn=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
   document.getElementById('cal-month-label').textContent=`${mn[calMonth]} ${calYear}`;
   const t=today();const days=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+  const _calTid=getTeamId();
+  const myAgenda=agenda.filter(e=>isSuperAdmin()||(e.teamId===_calTid));
   let html=days.map(d=>`<div class="cal-day-head">${d}</div>`).join('');
   const firstDay=new Date(calYear,calMonth,1);
   let startDow=firstDay.getDay()-1;if(startDow<0)startDow=6;
@@ -3003,7 +3031,7 @@ function renderAgenda(){
   for(let i=0;i<startDow;i++){const d=prevDays-startDow+i+1;html+=`<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`;}
   for(let d=1;d<=daysInMonth;d++){
     const dateStr=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const dayEvs=agenda.filter(e=>e.date===dateStr);const isToday=dateStr===t;
+    const dayEvs=myAgenda.filter(e=>e.date===dateStr);const isToday=dateStr===t;
     html+=`<div class="cal-day${isToday?' today':''}${dayEvs.length?' has-events':''}"
       ondragover="onDayDragOver(event,'${dateStr}')" ondragleave="onDayDragLeave(event)" ondrop="onDayDrop(event,'${dateStr}')"
       onclick="if(!event.target.closest('.cal-event-pill'))openAgendaModal(null,null,'${dateStr}')">
@@ -3020,7 +3048,11 @@ function renderAgenda(){
   const totalCells=startDow+daysInMonth;const remaining=(7-totalCells%7)%7;
   for(let i=1;i<=remaining;i++)html+=`<div class="cal-day other-month"><div class="cal-day-num">${i}</div></div>`;
   document.getElementById('cal-grid').innerHTML=html;
-  const upcoming=agenda.filter(e=>!e.done&&e.date>=t).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,20);
+  const _tid=getTeamId();
+const upcoming=agenda.filter(e=>{
+  if(!isSuperAdmin()&&e.teamId!==_tid)return false;
+  return !e.done&&e.date>=t;
+}).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,20);
   const ul=document.getElementById('upcoming-list');
   if(!upcoming.length){ul.innerHTML='<div style="padding:22px;text-align:center;color:var(--text3);font-size:12px">Aucun rappel à venir</div>';return;}
   ul.innerHTML=upcoming.map(ev=>{
@@ -3049,8 +3081,8 @@ function renderAgenda(){
 
 function renderContactAgenda(contactId,biz){
   const tid=getTeamId();
-  const evs=agenda.filter(e=>{
-    if(!isSuperAdmin()&&e.teamId&&e.teamId!==tid)return false;
+const evs=agenda.filter(e=>{
+    if(!isSuperAdmin()&&e.teamId!==tid)return false;
     // Closer voit uniquement agenda de ses setters + le sien
     if(currentUser?.role==='closer'){
       const teamMembers=users.filter(u=>u.teamId===tid).map(u=>u.id);
@@ -3081,7 +3113,8 @@ function renderContactAgenda(contactId,biz){
 }
 
 function renderContactWaHistory(contactId,biz){
-  const evs=messages.filter(m=>eid(m.contactId)===eid(contactId)||m.contactName===biz).slice(0,5);
+const tid2=getTeamId();
+const evs=messages.filter(m=>(isSuperAdmin()||(m.teamId===tid2))||(eid(m.contactId)===eid(contactId)||m.contactName===biz)).filter(m=>isSuperAdmin()||!m.teamId||m.teamId===tid2).slice(0,5);
   if(!evs.length)return'';
   const sitLabels={premier:'Premier contact',apres_appel:'Après appel',relance:'Relance',devis:'Après devis'};
   return`<div style="padding:10px 16px 0" class="fi">
@@ -3236,7 +3269,7 @@ function selectContact(id){
 function markNotInterested(id){
   const c=contacts.find(x=>eid(x.id)===eid(id));if(!c)return;
   showConfirm('Marquer comme non intéressé',`"${c.biz}" sera exclu de tous les scans futurs.`,'Confirmer','btn-warn',()=>{
-    blocked.push({...c,blockedAt:today(),blockedBy:currentUser?.name||'?'});saveBlocked();
+blocked.push({...r, blockedAt:today(), blockedBy:currentUser?.name||'?', teamId:getTeamId()});saveBlocked();
     contacts=contacts.filter(x=>eid(x.id)!==eid(id));saveContacts();selectedId=null;
     document.getElementById('detail-panel').innerHTML='<div class="detail-empty"><div class="detail-empty-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></div><div class="detail-empty-title">Contact exclu</div></div>';
     logActivity(`Non intéressé : ${c.biz}`,'block');renderAll();
@@ -3590,8 +3623,9 @@ function onPcolDrop(e,stage){
   _dragContactId=null;
 }
 function renderPipeline(){
+  const _tid=getTeamId();
   document.getElementById('view-pipeline').innerHTML=PIPELINE_STAGES.map(stage=>{
-    const cs=contacts.filter(c=>c.status===stage);
+    const cs=contacts.filter(c=>c.status===stage&&(isSuperAdmin()||(c.teamId===_tid)));
     return`<div class="pcol"
       ondragover="onPcolDragOver(event)" ondragleave="onPcolDragLeave(event)" ondrop="onPcolDrop(event,'${stage}')">
       <div class="pcol-head">
@@ -3664,25 +3698,21 @@ function quickFilter(t){currentTagFilter=currentTagFilter===t?null:t;currentNich
 
 function updateStats(){
 const tid=getTeamId();
-const total=contacts.filter(c=>isSuperAdmin()||(c.teamId===tid)).length;
-  document.getElementById('nc-total').textContent=total;
-  document.getElementById('nc-pipeline').textContent=contacts.filter(c=>['interested','quote'].includes(c.status)).length;
 const visibleContacts=contacts.filter(c=>isSuperAdmin()||(c.teamId===tid));
+const total=visibleContacts.length;
+  document.getElementById('nc-total').textContent=total;
+  document.getElementById('nc-pipeline').textContent=total;
 const h=visibleContacts.filter(c=>(c.tags||[]).includes('Chaud')).length;
 const q=visibleContacts.filter(c=>c.status==='quote').length;
-  document.getElementById('s1').textContent=total;document.getElementById('s2').textContent=h;document.getElementById('s3').textContent=q;
-  const cutoff7=new Date();cutoff7.setDate(cutoff7.getDate()-7);
-  const wa7=messages.filter(m=>m.sentDate>=cutoff7.toISOString().split('T')[0]).length;
-  document.getElementById('s4').textContent=wa7;
 document.getElementById('nc-hot').textContent=visibleContacts.filter(c=>(c.tags||[]).includes('Chaud')).length;
 document.getElementById('nc-recall').textContent=visibleContacts.filter(c=>(c.tags||[]).includes('Rappeler')).length;
 document.getElementById('nc-nosite').textContent=visibleContacts.filter(c=>(c.tags||[]).includes('Pas de site')).length;
 document.getElementById('nc-devis').textContent=q;
-document.getElementById('nc-blocked').textContent=blocked.length;
-document.getElementById('nc-agenda').textContent=agenda.filter(e=>!e.done&&e.date>=today()).length;
-document.getElementById('nc-rdv').textContent=rdvList.filter(r=>r.status==='pending').length;
-document.getElementById('nc-emails').textContent=sentEmails.length;
-document.getElementById('sb-wa-count').textContent=messages.length;
+document.getElementById('nc-blocked').textContent=isSuperAdmin()?blocked.length:blocked.filter(b=>b.teamId===tid).length;
+document.getElementById('nc-agenda').textContent=agenda.filter(e=>!e.done&&e.date>=today()&&(isSuperAdmin()||(e.teamId===tid))).length;
+document.getElementById('nc-rdv').textContent=rdvList.filter(r=>r.status==='pending'&&(isSuperAdmin()||(r.teamId===tid))).length;
+document.getElementById('nc-emails').textContent=isSuperAdmin()?sentEmails.length:sentEmails.filter(e=>e.teamId===tid).length;
+document.getElementById('sb-wa-count').textContent=isSuperAdmin()?messages.length:messages.filter(m=>m.teamId===tid).length;
 const called=visibleContacts.filter(c=>c.status!=='new').length;
 const pct=total?Math.round(called/total*100):0;
 document.getElementById('prog').style.width=pct+'%';
@@ -4097,7 +4127,7 @@ body: JSON.stringify({
   if(checkSession()){
     document.getElementById('login-screen').style.display='none';
     document.getElementById('main-app').style.display='flex';
-    initApp();
+    await initApp();
   }
 })();
 

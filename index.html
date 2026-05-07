@@ -4,6 +4,8 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>PushProspect CRM</title>
+<link rel="icon" type="image/png" href="/2.png"/>
+<script>(function(){var i=new Image();i.onload=function(){var c=document.createElement('canvas');c.width=c.height=64;var x=c.getContext('2d');x.beginPath();x.arc(32,32,32,0,Math.PI*2);x.closePath();x.clip();x.drawImage(i,0,0,64,64);var l=document.querySelector("link[rel='icon']");if(l)l.href=c.toDataURL();};i.src='/2.png';})();</script>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
@@ -1812,7 +1814,7 @@ async function sendRelance(){
   try{
     const resp=await fetch('/gmail/send',{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({to:e.email,subject,body:resolveTemplate(body,e,true)})
+      body:JSON.stringify({to:e.email,subject,body:resolveTemplate(body,e,true),teamId:getTeamId()})
     });
     if(resp.ok){
       if(!e.relances)e.relances=[];
@@ -1820,7 +1822,7 @@ async function sendRelance(){
       saveSentEmails();closeModals();renderEmailView();
       showToast(`Relance envoyée à ${e.biz}`,true);
       logActivity(`Relance email : ${e.biz}`,'info');
-    }else{showToast('Échec envoi relance',false);}
+    }else if(resp.status===402){showToast('Crédits insuffisants pour envoyer cet email',false);}else{showToast('Échec envoi relance',false);}
   }catch(err){showToast('Erreur : '+err.message,false);}
 }
 
@@ -1864,7 +1866,7 @@ async function sendNextRelance(subject,body){
     const resolvedSubject=resolveSubject(subject,e);
     const resp=await fetch('/gmail/send',{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({to:e.email,subject:resolvedSubject,body:resolveTemplate(body,{biz:e.biz,ville:e.ville,dirigeant:e.dirigeant},true)})
+      body:JSON.stringify({to:e.email,subject:resolvedSubject,body:resolveTemplate(body,{biz:e.biz,ville:e.ville,dirigeant:e.dirigeant},true),teamId:getTeamId()})
     });
     if(resp.ok){
       const original=sentEmails.find(x=>String(x.id)===String(e.id));
@@ -2315,7 +2317,7 @@ Créez votre compte gratuit ici :
 
 Une question ? Répondez à ce mail ou appelez-moi directement.
 
-Alexis Kechichian
+Alexis
 07 59 53 64 75`;
   } else if(type==='prospect'){
     subjectEl.value='{nom} – 2 idées concrètes pour attirer plus de clients';
@@ -2334,7 +2336,7 @@ Si ça vous parle, je vous propose un échange de 10 minutes cette semaine pour 
 
 Seriez-vous disponible demain en fin de journée ?
 
-Alexis Kechichian
+Alexis
 Directeur – Leadsvision
 07 59 53 64 75`;
   } else if(type==='nosite'){
@@ -2510,7 +2512,8 @@ async function openMailtoBlast(){
         body:JSON.stringify({
           to:r.email,
           subject:resolveSubject(subject,r),
-          body:resolveTemplate(body,r,true)
+          body:resolveTemplate(body,r,true),
+          teamId:getTeamId()
         })
       });
       if(resp.ok){
@@ -2519,7 +2522,7 @@ async function openMailtoBlast(){
         if(r.email&&r.biz!=='Restaurant Le Gourmet'){
           recordSentEmail(r,subject,'blast');
         }
-      }else failed++;
+      }else if(resp.status===402){showToast('Crédits insuffisants',false);break;}else failed++;
     }catch(e){failed++;}
     if(sent+failed<listWithMe.length){
       const wait=45000+Math.random()*45000;
@@ -2560,7 +2563,8 @@ async function sendNextEmailGmail(subject,body){
       body:JSON.stringify({
         to: r.email,
         subject: resolveSubject(subject, r),
-body: resolveTemplate(body, r, true)
+        body: resolveTemplate(body, r, true),
+        teamId: getTeamId()
       })
     });
     if(resp.ok){
@@ -2568,6 +2572,8 @@ body: resolveTemplate(body, r, true)
       if(r.email&&r.biz!=='Restaurant Le Gourmet'){
         recordSentEmail(r,subject,'one-by-one');
       }
+    } else if(resp.status===402){
+      showToast('Crédits insuffisants',false); return;
     } else {
       showToast(`✗ Échec pour ${r.biz}`,false);
     }
@@ -3906,7 +3912,7 @@ function renderCreditsView(){
     <div class="page-header" style="margin-bottom:28px">
       <div>
         <div class="page-title">Recharger des crédits</div>
-        <div class="page-sub">1 crédit = 1 prospect trouvé · Les crédits n'expirent jamais · Paiement sécurisé Stripe</div>
+        <div class="page-sub">1 crédit = 1 entreprise scannée ou 1 email envoyé · Pool commun utilisable librement · Les crédits n'expirent jamais · Paiement sécurisé Stripe</div>
       </div>
       <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
         <div style="text-align:right">
@@ -3937,7 +3943,8 @@ function renderCreditsView(){
                 <div style="font-size:11px;color:var(--text3);margin-bottom:4px;margin-top:${p.bonus>0||p.popular?'10px':'0'}">${p.label}</div>
                 <div style="font-size:22px;font-weight:300;letter-spacing:-0.8px;color:var(--text)">${p.val}€</div>
                 <div style="font-size:12px;color:var(--blue);font-weight:600;margin-top:3px">${p.credits.toLocaleString('fr-FR')} crédits</div>
-                <div style="font-size:11px;color:var(--text3);margin-top:2px">${(p.val/p.credits).toFixed(3).replace('.',',')}€ / lead</div>
+                <div style="font-size:10px;color:var(--text3);margin-top:1px">= ${p.credits.toLocaleString('fr-FR')} scans et/ou emails</div>
+                <div style="font-size:11px;color:var(--text3);margin-top:2px">${(p.val/p.credits).toFixed(3).replace('.',',')}€ / scan ou email</div>
               </div>`).join('')}
           </div>
 
@@ -4186,7 +4193,7 @@ function rechargeUpdate(amt){
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
         <div>
           <label class="form-label">Votre nom complet</label>
-          <input class="form-input" id="sender-name" placeholder="Jean Dupont" value="Alexis Kechichian" oninput="updatePreview()"/>
+          <input class="form-input" id="sender-name" placeholder="Jean Dupont" value="Alexis" oninput="updatePreview()"/>
         </div>
         <div>
           <label class="form-label">Votre titre / poste</label>

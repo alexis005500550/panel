@@ -313,19 +313,21 @@ function buildRegisterPage(refCode) {
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>PushProspect — Créer un compte</title>
+<link rel="icon" type="image/png" href="/logo.png"/>
+<script>(function(){var i=new Image();i.onload=function(){var c=document.createElement('canvas');c.width=c.height=64;var x=c.getContext('2d');x.beginPath();x.arc(32,32,32,0,Math.PI*2);x.closePath();x.clip();x.drawImage(i,0,0,64,64);var l=document.querySelector("link[rel=icon]");if(l)l.href=c.toDataURL();};i.src='/logo.png';})();</script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
 html,body{height:100%;font-family:'IBM Plex Sans','Inter',sans-serif;color:#fff;-webkit-font-smoothing:antialiased}
 /* LAYOUT */
-.page{display:grid;grid-template-columns:1fr 1fr;min-height:100vh;background:#0D0F14}
-@media(max-width:768px){.page{grid-template-columns:1fr}}
+.page{display:grid;grid-template-columns:1fr 1fr;height:100vh;background:#0D0F14;overflow:hidden}
+@media(max-width:900px){.page{grid-template-columns:1fr}}
+@media(max-width:900px){.left{display:none!important}}
 
 /* PANNEAU GAUCHE */
-.left{background:#0D0F14;padding:48px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
+.left{background:#0D0F14;padding:40px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;height:100vh}
 .left::before{content:'';position:absolute;top:-200px;left:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(28,84,240,0.14) 0%,transparent 70%);pointer-events:none}
 .left::after{content:'';position:absolute;bottom:-150px;right:-100px;width:400px;height:400px;background:radial-gradient(circle,rgba(28,84,240,0.06) 0%,transparent 70%);pointer-events:none}
-@media(max-width:768px){.left{padding:32px 24px;display:none}}
 
 .logo{display:flex;align-items:center;gap:10px;margin-bottom:64px}
 .logo-icon{width:36px;height:36px;background:#0D0F14;box-shadow:4px 4px 10px rgba(0,0,0,0.7),-3px -3px 8px rgba(255,255,255,0.03),inset 0 0 0 1px rgba(28,84,240,0.25);border-radius:10px;display:flex;align-items:center;justify-content:center}
@@ -346,10 +348,10 @@ html,body{height:100%;font-family:'IBM Plex Sans','Inter',sans-serif;color:#fff;
 .left-footer{font-size:12px;color:rgba(255,255,255,0.2);margin-top:48px}
 
 /* PANNEAU DROIT */
-.right{background:#0D0F14;display:flex;align-items:center;justify-content:center;padding:48px 40px;position:relative;border-left:1px solid rgba(255,255,255,0.04)}
-@media(max-width:768px){.right{padding:32px 20px;min-height:100vh;align-items:flex-start;padding-top:40px}}
+.right{background:#0D0F14;display:flex;align-items:flex-start;justify-content:center;padding:20px 28px;position:relative;border-left:1px solid rgba(255,255,255,0.04);height:100vh;overflow-y:auto}
+@media(max-width:900px){.right{padding:24px 20px;height:100vh;border-left:none}}
 
-.form-container{width:100%;max-width:420px}
+.form-container{width:100%;max-width:480px;padding-top:16px}
 
 .mobile-logo{display:none;align-items:center;gap:10px;margin-bottom:40px}
 @media(max-width:768px){.mobile-logo{display:flex}}
@@ -357,12 +359,12 @@ html,body{height:100%;font-family:'IBM Plex Sans','Inter',sans-serif;color:#fff;
 .mobile-logo-name{font-size:16px;font-weight:700}
 
 /* STEPS */
-.steps-header{margin-bottom:32px}
-.step-label{font-size:12px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-bottom:8px}
-.step-title{font-size:24px;font-weight:700;letter-spacing:-0.5px;margin-bottom:6px}
-.step-sub{font-size:14px;color:rgba(255,255,255,0.4);line-height:1.6}
+.steps-header{margin-bottom:12px}
+.step-label{font-size:11px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-bottom:4px}
+.step-title{font-size:22px;font-weight:700;letter-spacing:-0.5px;margin-bottom:4px}
+.step-sub{font-size:13px;color:rgba(255,255,255,0.4);line-height:1.5}
 
-.progress-bar{display:flex;gap:4px;margin-bottom:32px}
+.progress-bar{display:flex;gap:4px;margin-bottom:16px}
 .progress-seg{height:3px;flex:1;border-radius:2px;background:rgba(255,255,255,0.08);transition:background .3s}
 .progress-seg.active{background:#1C54F0}
 .progress-seg.done{background:rgba(28,84,240,0.4)}
@@ -376,26 +378,27 @@ html,body{height:100%;font-family:'IBM Plex Sans','Inter',sans-serif;color:#fff;
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 
 /* PLANS */
-.plans{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
-.plan{border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 14px;cursor:pointer;transition:all .2s;position:relative;background:#12151f;box-shadow:4px 4px 10px rgba(0,0,0,0.4),-2px -2px 6px rgba(255,255,255,0.02)}
+.plans{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:6px}
+.plan{border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:11px 10px;cursor:pointer;transition:all .2s;position:relative;background:#12151f;box-shadow:4px 4px 10px rgba(0,0,0,0.4),-2px -2px 6px rgba(255,255,255,0.02);display:flex;flex-direction:column}
 .plan:hover{border-color:rgba(28,84,240,0.3);background:#131620}
 .plan.selected{border-color:#1C54F0;background:rgba(28,84,240,0.1);box-shadow:0 0 0 1px rgba(28,84,240,0.4),4px 4px 10px rgba(0,0,0,0.4)}
-.plan-badge{position:absolute;top:-9px;left:50%;transform:translateX(-50%);font-size:10px;font-weight:700;padding:2px 10px;border-radius:20px;white-space:nowrap;letter-spacing:0.5px;background:#1C54F0;color:#fff}
-.plan-name{font-size:13px;font-weight:600;margin-bottom:4px}
-.plan-price{font-size:22px;font-weight:300;letter-spacing:-0.8px;line-height:1;margin-bottom:2px}
-.plan-credits{font-size:11px;color:rgba(255,255,255,0.35);margin-bottom:8px}
-.plan-check{width:18px;height:18px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:9px;position:absolute;top:12px;right:12px;transition:all .2s}
+.plan-badge{position:absolute;top:-8px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:700;padding:2px 9px;border-radius:20px;white-space:nowrap;letter-spacing:0.5px;background:#1C54F0;color:#fff}
+.plan-name{font-size:12.5px;font-weight:600;margin-bottom:1px}
+.plan-price{font-size:20px;font-weight:300;letter-spacing:-0.8px;line-height:1;margin-bottom:1px}
+.plan-credits{font-size:10px;color:rgba(255,255,255,0.35);margin-bottom:4px}
+.plan-check{width:16px;height:16px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:8px;position:absolute;top:10px;right:10px;transition:all .2s}
 .plan.selected .plan-check{background:#6366f1;border-color:#6366f1;color:#fff}
 
-.plan-agency{border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:14px 16px;cursor:pointer;transition:all .2s;background:#12151f;display:flex;align-items:center;gap:12px;margin-bottom:16px;box-shadow:4px 4px 10px rgba(0,0,0,0.4),-2px -2px 6px rgba(255,255,255,0.02)}
+.plan-agency{border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:10px 14px;cursor:pointer;transition:all .2s;background:#12151f;display:flex;align-items:center;gap:10px;margin-bottom:8px;box-shadow:4px 4px 10px rgba(0,0,0,0.4),-2px -2px 6px rgba(255,255,255,0.02)}
 .plan-agency:hover{border-color:rgba(28,84,240,0.3)}
 .plan-agency.selected{border-color:#1C54F0;background:rgba(28,84,240,0.08)}
+@media(max-width:480px){.plans{grid-template-columns:1fr 1fr;gap:6px}}
 
 /* BOUTON */
-.btn-main{width:100%;padding:13px;background:#1C54F0;color:#fff;border:none;border-radius:12px;font-size:13.5px;font-family:'IBM Plex Sans','Inter',sans-serif;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:0.2px;box-shadow:4px 4px 14px rgba(0,0,0,0.5),-2px -2px 8px rgba(255,255,255,0.025),0 0 0 1px rgba(28,84,240,0.4)}
+.btn-main{width:100%;padding:11px;background:#1C54F0;color:#fff;border:none;border-radius:10px;font-size:13px;font-family:'IBM Plex Sans','Inter',sans-serif;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:0.2px;box-shadow:4px 4px 14px rgba(0,0,0,0.5),-2px -2px 8px rgba(255,255,255,0.025),0 0 0 1px rgba(28,84,240,0.4)}
 .btn-main:hover{background:#1444D0;box-shadow:0 8px 24px rgba(28,84,240,0.35)}
 .btn-main:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
-.btn-back{background:none;border:none;color:rgba(255,255,255,0.3);font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;margin-top:14px;display:flex;align-items:center;gap:4px;transition:color .2s;padding:0}
+.btn-back{background:none;border:none;color:rgba(255,255,255,0.3);font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;margin-top:8px;display:flex;align-items:center;gap:4px;transition:color .2s;padding:0}
 .btn-back:hover{color:rgba(255,255,255,0.6)}
 
 /* ALERTS */
@@ -465,7 +468,7 @@ html,body{height:100%;font-family:'IBM Plex Sans','Inter',sans-serif;color:#fff;
     </div>
     </div>
 
-    <div class="left-footer">© 2025 PushProspect · Alexis Kechichian · 07 59 53 64 75</div>
+    <div class="left-footer">© 2025 PushProspect · 07 59 53 64 75</div>
   </div>
 
   <!-- DROITE -->
@@ -538,41 +541,67 @@ html,body{height:100%;font-family:'IBM Plex Sans','Inter',sans-serif;color:#fff;
           <div class="plan" id="pc-free" onclick="selectPlan('free')">
             <div class="plan-check" id="chk-free"></div>
             <div class="plan-name">Gratuit</div>
-            <div class="plan-price">0<span style="font-size:14px;color:rgba(255,255,255,0.4)">€</span></div>
+            <div style="font-size:9px;color:rgba(255,255,255,0.3);margin-bottom:7px;font-style:italic">Pour tester la plateforme</div>
+            <div class="plan-price">0<span style="font-size:13px;color:rgba(255,255,255,0.4)">€</span></div>
             <div class="plan-credits">15 crédits offerts</div>
-            <div style="font-size:11px;color:rgba(255,255,255,0.3);line-height:1.5">Scanner IA · CRM · WhatsApp</div>
+            <div style="font-size:9px;color:rgba(255,255,255,0.35);margin-bottom:8px">= 15 scans et/ou emails</div>
+            <div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:8px;display:flex;flex-direction:column;gap:4px">
+              <div style="font-size:9.5px;color:rgba(255,255,255,0.5);display:flex;gap:5px;align-items:flex-start;line-height:1.35"><span style="color:#6366f1;font-weight:800;flex-shrink:0">✓</span>Scanner IA — Google Maps, Pages Jaunes, Tripadvisor…</div>
+              <div style="font-size:9.5px;color:rgba(255,255,255,0.5);display:flex;gap:5px;align-items:flex-start;line-height:1.35"><span style="color:#6366f1;font-weight:800;flex-shrink:0">✓</span>Tél, email, dirigeant &amp; site web extraits auto</div>
+              <div style="font-size:9.5px;color:rgba(255,255,255,0.5);display:flex;gap:5px;align-items:flex-start;line-height:1.35"><span style="color:#6366f1;font-weight:800;flex-shrink:0">✓</span>CRM complet + Gmail + WhatsApp + Agenda</div>
+            </div>
           </div>
           <div class="plan" id="pc-starter" onclick="selectPlan('starter')">
             <div class="plan-check" id="chk-starter"></div>
             <div class="plan-name">Starter</div>
-            <div class="plan-price">25<span style="font-size:14px;color:rgba(255,255,255,0.4)">€</span></div>
+            <div style="font-size:9px;color:rgba(255,255,255,0.3);margin-bottom:7px;font-style:italic">Lancez votre prospection</div>
+            <div class="plan-price">25<span style="font-size:13px;color:rgba(255,255,255,0.4)">€</span></div>
             <div class="plan-credits">250 crédits</div>
-            <div style="font-size:11px;color:rgba(255,255,255,0.3);line-height:1.5">Tout Gratuit + Recharge</div>
+            <div style="font-size:9px;color:rgba(255,255,255,0.35);margin-bottom:8px">= 250 scans et/ou emails</div>
+            <div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:8px;display:flex;flex-direction:column;gap:4px">
+              <div style="font-size:9.5px;color:rgba(255,255,255,0.5);display:flex;gap:5px;align-items:flex-start;line-height:1.35"><span style="color:#6366f1;font-weight:800;flex-shrink:0">✓</span>Tout le plan Gratuit inclus</div>
+              <div style="font-size:9.5px;color:rgba(255,255,255,0.5);display:flex;gap:5px;align-items:flex-start;line-height:1.35"><span style="color:#6366f1;font-weight:800;flex-shrink:0">✓</span>250 entreprises à démarcher (scans + emails)</div>
+              <div style="font-size:9.5px;color:rgba(255,255,255,0.5);display:flex;gap:5px;align-items:flex-start;line-height:1.35"><span style="color:#6366f1;font-weight:800;flex-shrink:0">✓</span>Pipeline visuel + stats &amp; taux de conversion</div>
+            </div>
           </div>
           <div class="plan" id="pc-pro" onclick="selectPlan('pro')" style="position:relative">
             <div class="plan-badge" style="background:#6366f1;color:#fff">⚡ Populaire</div>
             <div class="plan-check" id="chk-pro"></div>
-            <div class="plan-name" style="margin-top:8px">Pro</div>
-            <div class="plan-price">50<span style="font-size:14px;color:rgba(255,255,255,0.4)">€</span></div>
+            <div class="plan-name" style="margin-top:7px">Pro</div>
+            <div style="font-size:9px;color:rgba(255,255,255,0.3);margin-bottom:7px;font-style:italic">Meilleur rapport qualité / prix</div>
+            <div class="plan-price">50<span style="font-size:13px;color:rgba(255,255,255,0.4)">€</span></div>
             <div class="plan-credits">500 crédits</div>
-            <div style="font-size:11px;color:rgba(255,255,255,0.3);line-height:1.5">Tout Starter inclus</div>
+            <div style="font-size:9px;color:rgba(255,255,255,0.35);margin-bottom:8px">= 500 scans et/ou emails</div>
+            <div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:8px;display:flex;flex-direction:column;gap:4px">
+              <div style="font-size:9.5px;color:rgba(255,255,255,0.5);display:flex;gap:5px;align-items:flex-start;line-height:1.35"><span style="color:#6366f1;font-weight:800;flex-shrink:0">✓</span>Tout le plan Starter inclus</div>
+              <div style="font-size:9.5px;color:rgba(255,255,255,0.5);display:flex;gap:5px;align-items:flex-start;line-height:1.35"><span style="color:#6366f1;font-weight:800;flex-shrink:0">✓</span>500 scans/emails — 2× plus de prospects</div>
+              <div style="font-size:9.5px;color:rgba(255,255,255,0.5);display:flex;gap:5px;align-items:flex-start;line-height:1.35"><span style="color:#6366f1;font-weight:800;flex-shrink:0">✓</span>Export CSV + historique complet des relances</div>
+            </div>
           </div>
           <div class="plan" id="pc-business" onclick="selectPlan('business')">
             <div class="plan-check" id="chk-business"></div>
             <div class="plan-name">Business</div>
-            <div class="plan-price">150<span style="font-size:14px;color:rgba(255,255,255,0.4)">€</span></div>
+            <div style="font-size:9px;color:rgba(255,255,255,0.3);margin-bottom:7px;font-style:italic">Pour scaler votre activité</div>
+            <div class="plan-price">150<span style="font-size:13px;color:rgba(255,255,255,0.4)">€</span></div>
             <div class="plan-credits">1 500 crédits</div>
-            <div style="font-size:11px;color:rgba(255,255,255,0.3);line-height:1.5">Tout Pro inclus</div>
+            <div style="font-size:9px;color:rgba(255,255,255,0.35);margin-bottom:8px">= 1 500 scans et/ou emails</div>
+            <div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:8px;display:flex;flex-direction:column;gap:4px">
+              <div style="font-size:9.5px;color:rgba(255,255,255,0.5);display:flex;gap:5px;align-items:flex-start;line-height:1.35"><span style="color:#6366f1;font-weight:800;flex-shrink:0">✓</span>Tout le plan Pro inclus</div>
+              <div style="font-size:9.5px;color:rgba(255,255,255,0.5);display:flex;gap:5px;align-items:flex-start;line-height:1.35"><span style="color:#6366f1;font-weight:800;flex-shrink:0">✓</span>1 500 scans/emails — idéal équipes commerciales</div>
+              <div style="font-size:9.5px;color:rgba(255,255,255,0.5);display:flex;gap:5px;align-items:flex-start;line-height:1.35"><span style="color:#6366f1;font-weight:800;flex-shrink:0">✓</span>Multi-utilisateurs + support prioritaire</div>
+            </div>
           </div>
         </div>
 
+        <div style="font-size:9.5px;color:rgba(255,255,255,0.3);text-align:center;margin:2px 0 7px;line-height:1.5">1 scan = 1 crédit &nbsp;·&nbsp; 1 email = 1 crédit &nbsp;·&nbsp; pool commun utilisable librement</div>
+
         <div class="plan-agency" id="pc-agency" onclick="selectPlan('agency')">
-          <div style="width:36px;height:36px;border-radius:8px;background:rgba(139,92,246,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          <div style="width:30px;height:30px;border-radius:7px;background:rgba(139,92,246,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
           </div>
           <div style="flex:1">
-            <div style="font-size:13px;font-weight:600;margin-bottom:2px">Agence — Leads illimités</div>
-            <div style="font-size:12px;color:rgba(255,255,255,0.35)">Tarif sur mesure · Contactez-nous</div>
+            <div style="font-size:12px;font-weight:600;margin-bottom:1px">Agence — Leads illimités</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.35)">Tarif sur mesure · Contactez-nous</div>
           </div>
           <div class="plan-check" id="chk-agency"></div>
         </div>
@@ -925,8 +954,16 @@ if (req.method === 'GET' && (url === '/' || url === '/index.html')) {
   // ── GMAIL : /gmail/send ──
   if (req.method === 'POST' && url === '/gmail/send') {
     try {
-      const { to, subject, body: emailBody } = await parseBody(req);
+      const { to, subject, body: emailBody, teamId } = await parseBody(req);
       if (!to || !subject || !emailBody) { jsonResp(res, 400, { error: 'to, subject, body requis' }); return; }
+
+      if (teamId) {
+        const creditResult = consumeCredit(teamId, 1);
+        if (!creditResult.ok) {
+          jsonResp(res, 402, { error: creditResult.error || 'Crédits insuffisants', balance: creditResult.balance });
+          return;
+        }
+      }
 
       let token = readGmailToken();
       if (!token) { jsonResp(res, 401, { error: 'Gmail non connecté — connectez-vous via /gmail/auth' }); return; }

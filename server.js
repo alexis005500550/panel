@@ -610,7 +610,8 @@ var PLANS_DATA={free:{name:'Gratuit',credits:15,price:0},starter:{name:'Starter'
 var selectedPlan=null;
 var formData={};
 
-function goToPlans(){
+async function goToPlans(){
+  var btn=document.querySelector('#step1 .btn-main');
   try{
     var teamName=(document.getElementById('teamName').value||'').trim();
     var adminLogin=(document.getElementById('adminLogin').value||'').trim();
@@ -618,16 +619,26 @@ function goToPlans(){
     var adminName=(document.getElementById('adminName').value||'').trim();
     var err=document.getElementById('err1');
     err.style.display='none';
-    if(!teamName){err.textContent='Le nom de lequipe est obligatoire.';err.style.display='block';return;}
-    if(!adminLogin){err.textContent='Lidentifiant est obligatoire.';err.style.display='block';return;}
-    if(adminPass.length<6){err.textContent='Mot de passe : 6 caractères minimum.';err.style.display='block';return;}
-formData.teamName=teamName;
+    if(!teamName){err.textContent="Le nom de l'équipe est obligatoire.";err.style.display='block';return;}
+    if(!adminLogin){err.textContent="L'identifiant est obligatoire.";err.style.display='block';return;}
+    if(adminLogin.length<8){err.textContent="L'identifiant doit faire au moins 8 caractères.";err.style.display='block';return;}
+    if(adminPass.length<8){err.textContent="Le mot de passe doit faire au moins 8 caractères.";err.style.display='block';return;}
+    if(!/[@!#$%^&*]/.test(adminPass)){err.textContent="Le mot de passe doit contenir au moins un symbole (@, !, #, $...).";err.style.display='block';return;}
+    if(btn){btn.disabled=true;btn.querySelector('svg')&&(btn.firstChild.textContent='Vérification... ');}
+    try{
+      var r=await fetch('/check-username?login='+encodeURIComponent(adminLogin));
+      var d=await r.json();
+      if(!d.available){err.textContent='Cet identifiant est déjà utilisé.';err.style.display='block';if(btn){btn.disabled=false;btn.firstChild.textContent='Continuer ';}return;}
+    }catch(e2){/* continuer si réseau off */}
+    if(btn){btn.disabled=false;btn.firstChild.textContent='Continuer ';}
+    formData.teamName=teamName;
     formData.adminLogin=adminLogin;
     formData.adminPass=adminPass;
     formData.adminName=adminName;
     document.getElementById('step1').style.display='none';
     document.getElementById('step2').style.display='block';
   }catch(e){
+    if(btn){btn.disabled=false;btn.firstChild.textContent='Continuer ';}
     var errEl=document.getElementById('err1');
     if(errEl){errEl.textContent='Erreur: '+e.message;errEl.style.display='block';}
     console.error('goToPlans error:',e);
@@ -1032,6 +1043,15 @@ const raw = [
     return;
   }
 
+  // ── Check username disponibilité ──
+  if (req.method === 'GET' && url.startsWith('/check-username')) {
+    const login = new URL('http://x' + url).searchParams.get('login') || '';
+    const users = readDB('users');
+    const taken = users.some(u => u.login.toLowerCase() === login.toLowerCase().trim());
+    jsonResp(res, 200, { available: !taken });
+    return;
+  }
+
   // ── Proxy Gemini : /api ──
   // ── Teams : /teams/create ──
 if (req.method === 'POST' && url === '/teams/create') {
@@ -1147,18 +1167,11 @@ if (planKey !== 'superadmin') {
     // ── FIN ANTI-ABUS ──
 
 const users = readDB('users');
-if (users.find(u => u.login === adminLogin)) {
+if (users.find(u => u.login.toLowerCase() === adminLogin.toLowerCase().trim())) {
   jsonResp(res, 400, { error: 'Identifiant déjà utilisé' }); return;
 }
 const teams = readDB('teams');
-const recentTeam = teams.find(t =>
-  t.name && t.name.toLowerCase() === teamName.toLowerCase() &&
-  t.createdAt >= new Date(Date.now() - 24*60*60*1000).toISOString().split('T')[0]
-);
-if (recentTeam) {
-  jsonResp(res, 400, { error: 'Une équipe avec ce nom a déjà été créée aujourd\'hui.' });
-  return;
-}
+
 const teamId = 'team_' + Date.now();
 const adminId = 'user_' + Date.now() + '_admin';
 
@@ -1382,18 +1395,11 @@ if (req.method === 'POST' && url === '/affiliate/register') {
       jsonResp(res, 400, { error: 'Champs requis manquants' }); return;
     }
 const users = readDB('users');
-if (users.find(u => u.login === adminLogin)) {
+if (users.find(u => u.login.toLowerCase() === adminLogin.toLowerCase().trim())) {
   jsonResp(res, 400, { error: 'Identifiant déjà utilisé' }); return;
 }
 const teams = readDB('teams');
-const recentTeam = teams.find(t =>
-  t.name && t.name.toLowerCase() === teamName.toLowerCase() &&
-  t.createdAt >= new Date(Date.now() - 24*60*60*1000).toISOString().split('T')[0]
-);
-if (recentTeam) {
-  jsonResp(res, 400, { error: 'Une équipe avec ce nom a déjà été créée aujourd\'hui.' });
-  return;
-}
+
 const teamId = 'team_' + Date.now();
 const adminId = 'user_' + Date.now() + '_admin';
     teams.push({

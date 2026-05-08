@@ -38,7 +38,8 @@ if (!fs.existsSync(WA_DIR))   fs.mkdirSync(WA_DIR,   { recursive: true });
 const GMAIL_CLIENT_ID     = process.env.GMAIL_CLIENT_ID;
 const GMAIL_CLIENT_SECRET = process.env.GMAIL_CLIENT_SECRET;
 const GMAIL_REDIRECT_URI  = `http://localhost:${PORT}/gmail/callback`;
-const GMAIL_TOKEN_FILE    = path.join(DATA_DIR, 'gmail_token.json');
+const GMAIL_TOKENS_DIR    = path.join(DATA_DIR, 'gmail_tokens');
+if (!fs.existsSync(GMAIL_TOKENS_DIR)) fs.mkdirSync(GMAIL_TOKENS_DIR, { recursive: true });
 
 // ══ CREDITS ══
 function getTeamCredits(teamId) {
@@ -101,13 +102,17 @@ function initFreeCredits(teamId) {
   return entry;
 }
 
-function readGmailToken() {
-  try { if (fs.existsSync(GMAIL_TOKEN_FILE)) return JSON.parse(fs.readFileSync(GMAIL_TOKEN_FILE, 'utf8')); }
-  catch(e) {}
+function readGmailToken(teamId) {
+  try {
+    if (!teamId) return null;
+    const f = path.join(GMAIL_TOKENS_DIR, `${teamId}.json`);
+    if (fs.existsSync(f)) return JSON.parse(fs.readFileSync(f, 'utf8'));
+  } catch(e) {}
   return null;
 }
-function saveGmailToken(token) {
-  fs.writeFileSync(GMAIL_TOKEN_FILE, JSON.stringify(token), 'utf8');
+function saveGmailToken(teamId, token) {
+  if (!teamId) return;
+  fs.writeFileSync(path.join(GMAIL_TOKENS_DIR, `${teamId}.json`), JSON.stringify(token), 'utf8');
 }
 
 // ── DB ──────────────────────────────────────────────────────────────
@@ -891,28 +896,34 @@ if (req.method === 'GET' && (url === '/' || url === '/index.html')) {
   }
 
   // ── GMAIL : /gmail/auth ──
-  if (req.method === 'GET' && url === '/gmail/auth') {
+  if (req.method === 'GET' && url.startsWith('/gmail/auth')) {
     if (!GMAIL_CLIENT_ID || !GMAIL_CLIENT_SECRET) {
       res.writeHead(500, {'Content-Type':'text/plain'});
       res.end('GMAIL_CLIENT_ID ou GMAIL_CLIENT_SECRET manquant dans .env');
       return;
     }
+    const authQp = new URL('http://x' + req.url).searchParams;
+    const authTeamId = authQp.get('teamId') || '';
+    const authHint   = authQp.get('hint')   || '';
     const params = new URLSearchParams({
-  client_id: GMAIL_CLIENT_ID,
-  redirect_uri: GMAIL_REDIRECT_URI,
-  response_type: 'code',
-  scope: 'https://mail.google.com/',
-  access_type: 'offline',
-  prompt: 'select_account consent',
-  login_hint: 'pro.leadsvision@gmail.com',
-});
+      client_id: GMAIL_CLIENT_ID,
+      redirect_uri: GMAIL_REDIRECT_URI,
+      response_type: 'code',
+      scope: 'https://mail.google.com/',
+      access_type: 'offline',
+      prompt: 'select_account consent',
+      state: authTeamId,
+      ...(authHint ? { login_hint: authHint } : {})
+    });
     res.writeHead(302, { Location: 'https://accounts.google.com/o/oauth2/v2/auth?' + params });
     res.end(); return;
   }
 
   // ── GMAIL : /gmail/callback ──
   if (req.method === 'GET' && url.startsWith('/gmail/callback')) {
-    const code = new URL('http://x' + req.url).searchParams.get('code');
+    const cbUrl = new URL('http://x' + req.url);
+    const code   = cbUrl.searchParams.get('code');
+    const cbTeamId = cbUrl.searchParams.get('state') || '';
     if (!code) { res.writeHead(400); res.end('Code manquant'); return; }
     const body = new URLSearchParams({
       code, client_id: GMAIL_CLIENT_ID, client_secret: GMAIL_CLIENT_SECRET,
@@ -927,8 +938,8 @@ if (req.method === 'GET' && (url === '/' || url === '/index.html')) {
         try {
           const token = JSON.parse(d);
           token.obtained_at = Date.now();
-          saveGmailToken(token);
-          console.log('  ✅ Gmail connecté — token sauvegardé');
+          saveGmailToken(cbTeamId, token);
+          console.log(`  ✅ Gmail connecté — token sauvegardé (team: ${cbTeamId || 'unknown'})`);
           res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
           res.end(`<!DOCTYPE html><html><body style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f0fdf4">
             <div style="text-align:center;padding:40px;background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.1)">
@@ -946,8 +957,9 @@ if (req.method === 'GET' && (url === '/' || url === '/index.html')) {
   }
 
   // ── GMAIL : /gmail/status ──
-  if (req.method === 'GET' && url === '/gmail/status') {
-    const token = readGmailToken();
+  if (req.method === 'GET' && url.startsWith('/gmail/status')) {
+    const statusTeamId = new URL('http://x' + req.url).searchParams.get('teamId') || '';
+    const token = readGmailToken(statusTeamId);
     jsonResp(res, 200, { connected: !!token, email: token?.email || null }); return;
   }
 
@@ -965,7 +977,7 @@ if (req.method === 'GET' && (url === '/' || url === '/index.html')) {
         }
       }
 
-      let token = readGmailToken();
+      let token = readGmailToken(teamId);
       if (!token) { jsonResp(res, 401, { error: 'Gmail non connecté — connectez-vous via /gmail/auth' }); return; }
 
       // Rafraîchir le token si expiré
@@ -984,7 +996,7 @@ if (req.method === 'GET' && (url === '/' || url === '/index.html')) {
               const t = JSON.parse(d);
               t.obtained_at = Date.now();
               t.refresh_token = token.refresh_token;
-              saveGmailToken(t); resolve(t);
+              saveGmailToken(teamId, t); resolve(t);
             });
           });
           r.on('error', reject); r.write(refreshBody); r.end();

@@ -37,7 +37,11 @@ if (!fs.existsSync(WA_DIR))   fs.mkdirSync(WA_DIR,   { recursive: true });
 // ══ GMAIL OAuth — constantes et helpers (hors serveur, c'est correct ici) ══
 const GMAIL_CLIENT_ID     = process.env.GMAIL_CLIENT_ID;
 const GMAIL_CLIENT_SECRET = process.env.GMAIL_CLIENT_SECRET;
-const GMAIL_REDIRECT_URI  = `http://localhost:${PORT}/gmail/callback`;
+function getGmailRedirectUri(req) {
+  const proto = req.headers['x-forwarded-proto'] || 'http';
+  const host  = req.headers['x-forwarded-host'] || req.headers['host'] || `localhost:${PORT}`;
+  return `${proto}://${host}/gmail/callback`;
+}
 const GMAIL_TOKENS_DIR    = path.join(DATA_DIR, 'gmail_tokens');
 if (!fs.existsSync(GMAIL_TOKENS_DIR)) fs.mkdirSync(GMAIL_TOKENS_DIR, { recursive: true });
 
@@ -907,7 +911,7 @@ if (req.method === 'GET' && (url === '/' || url === '/index.html')) {
     const authHint   = authQp.get('hint')   || '';
     const params = new URLSearchParams({
       client_id: GMAIL_CLIENT_ID,
-      redirect_uri: GMAIL_REDIRECT_URI,
+      redirect_uri: getGmailRedirectUri(req),
       response_type: 'code',
       scope: 'https://mail.google.com/',
       access_type: 'offline',
@@ -927,7 +931,7 @@ if (req.method === 'GET' && (url === '/' || url === '/index.html')) {
     if (!code) { res.writeHead(400); res.end('Code manquant'); return; }
     const body = new URLSearchParams({
       code, client_id: GMAIL_CLIENT_ID, client_secret: GMAIL_CLIENT_SECRET,
-      redirect_uri: GMAIL_REDIRECT_URI, grant_type: 'authorization_code',
+      redirect_uri: getGmailRedirectUri(req), grant_type: 'authorization_code',
     }).toString();
     const tokenReq = https.request({
       hostname: 'oauth2.googleapis.com', path: '/token', method: 'POST',

@@ -1527,13 +1527,24 @@ function selectWaTemplate(id){
   document.querySelectorAll('[id^="watpl-"]').forEach(el=>{el.classList.toggle('selected',el.id==='watpl-'+id);});
 }
 
-function connectGmail(){
+async function saveGmailCredentials(){
   const teamId=getTeamId()||'';
-  const hint=(document.getElementById('gmail-hint-input')?.value||'').trim();
-  let url='/gmail/auth?teamId='+encodeURIComponent(teamId);
-  if(hint) url+='&hint='+encodeURIComponent(hint);
-  window.open(url,'_blank');
-  setTimeout(checkGmailStatus,3000);
+  const email=(document.getElementById('gmail-email-input')?.value||'').trim();
+  const password=(document.getElementById('gmail-pass-input')?.value||'').trim();
+  if(!email||!password){alert('Renseignez votre adresse Gmail et votre mot de passe d\'application.');return;}
+  const btn=document.getElementById('gmail-connect-btn');
+  if(btn){btn.disabled=true;btn.textContent='Vérification...';}
+  try{
+    const r=await fetch('/gmail/save-credentials',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({teamId,email,password})}).then(r=>r.json());
+    if(r.ok){await checkGmailStatus();}
+    else{alert('Erreur : '+(r.error||'Identifiants invalides'));}
+  }catch(e){alert('Erreur de connexion');}
+  if(btn){btn.disabled=false;btn.textContent='Connecter';}
+}
+async function disconnectGmail(){
+  const teamId=getTeamId()||'';
+  await fetch('/gmail/disconnect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({teamId})});
+  await checkGmailStatus();
 }
 async function checkGmailStatus(){
   try{
@@ -1541,10 +1552,12 @@ async function checkGmailStatus(){
     const s=await fetch('/gmail/status?teamId='+encodeURIComponent(teamId)).then(r=>r.json());
     const dot=document.getElementById('gmail-status-dot');
     const lbl=document.getElementById('gmail-status-lbl');
-    const inp=document.getElementById('gmail-hint-input');
+    const form=document.getElementById('gmail-smtp-form');
+    const disconnectBtn=document.getElementById('gmail-disconnect-btn');
     if(dot) dot.style.background=s.connected?'var(--green)':'var(--text3)';
-    if(lbl) lbl.textContent=s.connected?`Gmail connecté${s.email?' · '+s.email:''}` :'Gmail non connecté';
-    if(inp) inp.style.display=s.connected?'none':'';
+    if(lbl) lbl.textContent=s.connected?`Gmail connecté · ${s.email}`:'Gmail non connecté';
+    if(form) form.style.display=s.connected?'none':'flex';
+    if(disconnectBtn) disconnectBtn.style.display=s.connected?'':'none';
   }catch(e){}
 }
 // Appeler au chargement et quand on ouvre le modal
@@ -4202,11 +4215,20 @@ function rechargeUpdate(amt){
     <div class="modal-title">Envoi groupé d'emails</div>
 
     <!-- STATUT GMAIL -->
-    <div id="gmail-status-bar" style="display:flex;align-items:center;gap:8px;margin-bottom:14px;padding:9px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);font-size:12.5px">
-      <span id="gmail-status-dot" style="width:8px;height:8px;border-radius:50%;background:var(--text3);flex-shrink:0"></span>
-      <span id="gmail-status-lbl">Gmail non connecté</span>
-      <input id="gmail-hint-input" type="email" placeholder="votre@gmail.com" style="margin-left:auto;padding:4px 8px;border-radius:4px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;width:160px"/>
-      <button class="btn btn-sm btn-primary" onclick="connectGmail()">Connecter Gmail</button>
+    <div id="gmail-status-bar" style="margin-bottom:14px;border-radius:6px;border:1px solid var(--border);background:var(--surface);font-size:12.5px;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:8px;padding:9px 12px">
+        <span id="gmail-status-dot" style="width:8px;height:8px;border-radius:50%;background:var(--text3);flex-shrink:0"></span>
+        <span id="gmail-status-lbl">Gmail non connecté</span>
+        <button id="gmail-disconnect-btn" onclick="disconnectGmail()" style="display:none;margin-left:auto;padding:3px 10px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:11.5px;cursor:pointer">Déconnecter</button>
+      </div>
+      <div id="gmail-smtp-form" style="display:flex;flex-direction:column;gap:7px;padding:0 12px 12px">
+        <div style="display:flex;gap:6px">
+          <input id="gmail-email-input" type="email" placeholder="votre@gmail.com" style="flex:1;padding:5px 8px;border-radius:4px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px"/>
+          <input id="gmail-pass-input" type="password" placeholder="Mot de passe d'application (16 car.)" style="flex:2;padding:5px 8px;border-radius:4px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px"/>
+          <button id="gmail-connect-btn" onclick="saveGmailCredentials()" class="btn btn-sm btn-primary">Connecter</button>
+        </div>
+        <span style="color:var(--text3);font-size:11px">Compte Google &rarr; Sécurité &rarr; Mots de passe des applications (nécessite la double authentification)</span>
+      </div>
     </div>
 
     <div id="eblast-count-info" style="font-size:12.5px;color:var(--text2);margin-bottom:14px;padding:10px 12px;background:var(--surface);border-radius:var(--radius);border:1px solid var(--border)"></div>

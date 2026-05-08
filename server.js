@@ -34,16 +34,28 @@ const WA_DIR   = path.join(__dirname, 'wa_session');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 if (!fs.existsSync(WA_DIR))   fs.mkdirSync(WA_DIR,   { recursive: true });
 
-// ══ GMAIL OAuth — constantes et helpers (hors serveur, c'est correct ici) ══
-const GMAIL_CLIENT_ID     = process.env.GMAIL_CLIENT_ID;
-const GMAIL_CLIENT_SECRET = process.env.GMAIL_CLIENT_SECRET;
-function getGmailRedirectUri(req) {
-  const proto = req.headers['x-forwarded-proto'] || 'http';
-  const host  = req.headers['x-forwarded-host'] || req.headers['host'] || `localhost:${PORT}`;
-  return `${proto}://${host}/gmail/callback`;
+// ══ GMAIL SMTP ══
+const nodemailer = require('nodemailer');
+const GMAIL_CREDS_DIR = path.join(DATA_DIR, 'gmail_creds');
+if (!fs.existsSync(GMAIL_CREDS_DIR)) fs.mkdirSync(GMAIL_CREDS_DIR, { recursive: true });
+
+function readGmailCreds(teamId) {
+  try {
+    if (!teamId) return null;
+    const f = path.join(GMAIL_CREDS_DIR, `${teamId}.json`);
+    if (fs.existsSync(f)) return JSON.parse(fs.readFileSync(f, 'utf8'));
+  } catch(e) {}
+  return null;
 }
-const GMAIL_TOKENS_DIR    = path.join(DATA_DIR, 'gmail_tokens');
-if (!fs.existsSync(GMAIL_TOKENS_DIR)) fs.mkdirSync(GMAIL_TOKENS_DIR, { recursive: true });
+function saveGmailCreds(teamId, creds) {
+  if (!teamId) return;
+  fs.writeFileSync(path.join(GMAIL_CREDS_DIR, `${teamId}.json`), JSON.stringify(creds), 'utf8');
+}
+function deleteGmailCreds(teamId) {
+  if (!teamId) return;
+  const f = path.join(GMAIL_CREDS_DIR, `${teamId}.json`);
+  if (fs.existsSync(f)) fs.unlinkSync(f);
+}
 
 // ══ CREDITS ══
 function getTeamCredits(teamId) {
@@ -106,18 +118,6 @@ function initFreeCredits(teamId) {
   return entry;
 }
 
-function readGmailToken(teamId) {
-  try {
-    if (!teamId) return null;
-    const f = path.join(GMAIL_TOKENS_DIR, `${teamId}.json`);
-    if (fs.existsSync(f)) return JSON.parse(fs.readFileSync(f, 'utf8'));
-  } catch(e) {}
-  return null;
-}
-function saveGmailToken(teamId, token) {
-  if (!teamId) return;
-  fs.writeFileSync(path.join(GMAIL_TOKENS_DIR, `${teamId}.json`), JSON.stringify(token), 'utf8');
-}
 
 // ── DB ──────────────────────────────────────────────────────────────
 const DB_FILES = {
@@ -899,72 +899,38 @@ if (req.method === 'GET' && (url === '/' || url === '/index.html')) {
     return;
   }
 
-  // ── GMAIL : /gmail/auth ──
-  if (req.method === 'GET' && url.startsWith('/gmail/auth')) {
-    if (!GMAIL_CLIENT_ID || !GMAIL_CLIENT_SECRET) {
-      res.writeHead(500, {'Content-Type':'text/plain'});
-      res.end('GMAIL_CLIENT_ID ou GMAIL_CLIENT_SECRET manquant dans .env');
-      return;
+  // ── GMAIL : /gmail/save-credentials ──
+  if (req.method === 'POST' && url === '/gmail/save-credentials') {
+    try {
+      const { teamId, email, password } = await parseBody(req);
+      if (!teamId || !email || !password) { jsonResp(res, 400, { error: 'teamId, email, password requis' }); return; }
+      // Vérifier les credentials via SMTP avant de sauvegarder
+      const transporter = nodemailer.createTransport({ host: 'smtp.gmail.com', port: 587, secure: false, auth: { user: email, pass: password } });
+      await transporter.verify();
+      saveGmailCreds(teamId, { email, password });
+      console.log(`  ✅ Gmail SMTP connecté (team: ${teamId}, email: ${email})`);
+      jsonResp(res, 200, { ok: true, email });
+    } catch(err) {
+      jsonResp(res, 400, { error: 'Identifiants invalides — vérifiez l\'adresse et le mot de passe d\'application' });
     }
-    const authQp = new URL('http://x' + req.url).searchParams;
-    const authTeamId = authQp.get('teamId') || '';
-    const authHint   = authQp.get('hint')   || '';
-    const params = new URLSearchParams({
-      client_id: GMAIL_CLIENT_ID,
-      redirect_uri: getGmailRedirectUri(req),
-      response_type: 'code',
-      scope: 'https://mail.google.com/',
-      access_type: 'offline',
-      prompt: 'select_account consent',
-      state: authTeamId,
-      ...(authHint ? { login_hint: authHint } : {})
-    });
-    res.writeHead(302, { Location: 'https://accounts.google.com/o/oauth2/v2/auth?' + params });
-    res.end(); return;
+    return;
   }
 
-  // ── GMAIL : /gmail/callback ──
-  if (req.method === 'GET' && url.startsWith('/gmail/callback')) {
-    const cbUrl = new URL('http://x' + req.url);
-    const code   = cbUrl.searchParams.get('code');
-    const cbTeamId = cbUrl.searchParams.get('state') || '';
-    if (!code) { res.writeHead(400); res.end('Code manquant'); return; }
-    const body = new URLSearchParams({
-      code, client_id: GMAIL_CLIENT_ID, client_secret: GMAIL_CLIENT_SECRET,
-      redirect_uri: getGmailRedirectUri(req), grant_type: 'authorization_code',
-    }).toString();
-    const tokenReq = https.request({
-      hostname: 'oauth2.googleapis.com', path: '/token', method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(body) }
-    }, tokenRes => {
-      let d = ''; tokenRes.on('data', c => d += c);
-      tokenRes.on('end', () => {
-        try {
-          const token = JSON.parse(d);
-          token.obtained_at = Date.now();
-          saveGmailToken(cbTeamId, token);
-          console.log(`  ✅ Gmail connecté — token sauvegardé (team: ${cbTeamId || 'unknown'})`);
-          res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-          res.end(`<!DOCTYPE html><html><body style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f0fdf4">
-            <div style="text-align:center;padding:40px;background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.1)">
-            <div style="font-size:56px">✅</div><h2 style="color:#16a34a">Gmail connecté !</h2>
-            <p>Fermez cette page et retournez sur PushProspect.</p>
-            <script>setTimeout(()=>window.close(),3000)</script>
-            </div></body></html>`);
-        } catch(e) {
-          res.writeHead(500); res.end('Erreur token : ' + e.message);
-        }
-      });
-    });
-    tokenReq.on('error', e => { res.writeHead(500); res.end(e.message); });
-    tokenReq.write(body); tokenReq.end(); return;
+  // ── GMAIL : /gmail/disconnect ──
+  if (req.method === 'POST' && url === '/gmail/disconnect') {
+    try {
+      const { teamId } = await parseBody(req);
+      if (teamId) deleteGmailCreds(teamId);
+      jsonResp(res, 200, { ok: true });
+    } catch(err) { jsonResp(res, 500, { error: err.message }); }
+    return;
   }
 
   // ── GMAIL : /gmail/status ──
   if (req.method === 'GET' && url.startsWith('/gmail/status')) {
     const statusTeamId = new URL('http://x' + req.url).searchParams.get('teamId') || '';
-    const token = readGmailToken(statusTeamId);
-    jsonResp(res, 200, { connected: !!token, email: token?.email || null }); return;
+    const creds = readGmailCreds(statusTeamId);
+    jsonResp(res, 200, { connected: !!creds, email: creds?.email || null }); return;
   }
 
   // ── GMAIL : /gmail/send ──
@@ -981,66 +947,11 @@ if (req.method === 'GET' && (url === '/' || url === '/index.html')) {
         }
       }
 
-      let token = readGmailToken(teamId);
-      if (!token) { jsonResp(res, 401, { error: 'Gmail non connecté — connectez-vous via /gmail/auth' }); return; }
+      const creds = readGmailCreds(teamId);
+      if (!creds) { jsonResp(res, 401, { error: 'Gmail non connecté' }); return; }
 
-      // Rafraîchir le token si expiré
-      if (Date.now() > (token.obtained_at + (token.expires_in - 60) * 1000) && token.refresh_token) {
-        const refreshBody = new URLSearchParams({
-          client_id: GMAIL_CLIENT_ID, client_secret: GMAIL_CLIENT_SECRET,
-          refresh_token: token.refresh_token, grant_type: 'refresh_token',
-        }).toString();
-        token = await new Promise((resolve, reject) => {
-          const r = https.request({
-            hostname: 'oauth2.googleapis.com', path: '/token', method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(refreshBody) }
-          }, res2 => {
-            let d = ''; res2.on('data', c => d += c);
-            res2.on('end', () => {
-              const t = JSON.parse(d);
-              t.obtained_at = Date.now();
-              t.refresh_token = token.refresh_token;
-              saveGmailToken(teamId, t); resolve(t);
-            });
-          });
-          r.on('error', reject); r.write(refreshBody); r.end();
-        });
-      }
-
-      // Construire l'email RFC 2822 encodé en base64url
-const raw = [
-  `To: ${to}`,
-  `Subject: =?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`,
-  `MIME-Version: 1.0`,
-  `Content-Type: text/html; charset=UTF-8`,
-  `Content-Transfer-Encoding: base64`,
-  ``,
-  Buffer.from(`<html><body>${emailBody}</body></html>`, 'utf8').toString('base64')
-].join('\r\n');
-      const encoded = Buffer.from(raw).toString('base64')
-        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-
-      const gmailPayload = JSON.stringify({ raw: encoded });
-      await new Promise((resolve, reject) => {
-        const r = https.request({
-          hostname: 'gmail.googleapis.com',
-          path: '/gmail/v1/users/me/messages/send',
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token.access_token}`,
-            'Content-Type': 'application/json',
-            'Content-Length': Buffer.byteLength(gmailPayload)
-          }
-        }, res2 => {
-          let d = ''; res2.on('data', c => d += c);
-          res2.on('end', () => {
-            const result = JSON.parse(d);
-            if (result.error) reject(new Error(result.error.message));
-            else resolve(result);
-          });
-        });
-        r.on('error', reject); r.write(gmailPayload); r.end();
-      });
+      const transporter = nodemailer.createTransport({ host: 'smtp.gmail.com', port: 587, secure: false, auth: { user: creds.email, pass: creds.password } });
+      await transporter.sendMail({ from: creds.email, to, subject, html: emailBody });
 
       console.log(`  ✉️  Gmail → ${to} | ${subject}`);
       jsonResp(res, 200, { ok: true });

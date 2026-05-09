@@ -911,6 +911,14 @@ a{color:inherit}
             <option value="agence publicité facebook ads google ads">Agence Facebook/Google Ads</option>
             <option value="coach business entrepreneur">Coach business / Entrepreneur</option>
             <option value="formateur en ligne infoproduit">Formateur en ligne / Infoproduit</option>
+            <option disabled>── Freelances & Digital ──</option>
+            <option value="monteur vidéo freelance">Monteur vidéo freelance</option>
+            <option value="développeur web freelance">Développeur web freelance</option>
+            <option value="graphiste UI designer freelance">Graphiste / UI designer freelance</option>
+            <option value="community manager freelance">Community manager freelance</option>
+            <option value="rédacteur copywriter freelance">Rédacteur / Copywriter freelance</option>
+            <option value="consultant freelance">Consultant freelance</option>
+            <option value="photographe freelance">Photographe freelance</option>
           </select>
         </div>
         <div><label class="form-label">Ville / Zone géographique</label><input class="form-input" id="scan-ville" placeholder="Paris, Lyon, Bordeaux…" value="Paris"/></div>
@@ -971,6 +979,21 @@ a{color:inherit}
   <div class="src-card on" data-src="sw" onclick="toggleSrc(this)">
     <span class="src-card-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span>
     <div class="src-card-body"><div class="src-card-name">Sites officiels</div><div class="src-card-sub">Détection directe</div></div>
+    <div class="src-card-chk">✓</div>
+  </div>
+  <div class="src-card" data-src="ml" onclick="toggleSrc(this)">
+    <span class="src-card-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--coral)" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+    <div class="src-card-body"><div class="src-card-name">Malt / Freelances</div><div class="src-card-sub">Malt, Codeur, portfolios</div></div>
+    <div class="src-card-chk">✓</div>
+  </div>
+  <div class="src-card" data-src="pt" onclick="toggleSrc(this)">
+    <span class="src-card-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg></span>
+    <div class="src-card-body"><div class="src-card-name">Portfolios & sites</div><div class="src-card-sub">Sites perso freelances</div></div>
+    <div class="src-card-chk">✓</div>
+  </div>
+  <div class="src-card" data-src="gh" onclick="toggleSrc(this)">
+    <span class="src-card-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg></span>
+    <div class="src-card-body"><div class="src-card-name">GitHub / Behance</div><div class="src-card-sub">Pages perso développeurs</div></div>
     <div class="src-card-chk">✓</div>
   </div>
 </div>
@@ -1144,6 +1167,7 @@ a{color:inherit}
           <option>Coach sportif</option><option>Nutritionniste</option><option>Salle de sport</option>
           <option>Kinésithérapeute</option><option>Vétérinaire</option><option>Photographe / Vidéaste</option><option>Garage automobile</option><option>Auto-école</option><option>Hôtel</option><option>Agence immobilière</option><option>Expert-comptable</option><option>Courtier assurance</option>
           <option>Agence marketing</option><option>Agence web</option><option>Agence SEO</option><option>Agence Ads</option><option>Coach business</option><option>Formateur en ligne</option>
+          <option>Monteur vidéo freelance</option><option>Développeur web freelance</option><option>Graphiste freelance</option><option>Community manager freelance</option><option>Rédacteur freelance</option><option>Consultant freelance</option><option>Photographe freelance</option>
           <option>Autre</option>
         </select>
 
@@ -2197,10 +2221,10 @@ function getSearchZone(ville,round){
   if(round===0)return ville;
   const key=ville.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z]/g,'');
   const found=Object.entries(CITY_SUBZONES).find(([k])=>key.startsWith(k));
-  if(!found)return ville;
-  return found[1][(round-1)%found[1].length];
+  if(found) return found[1][(round-1)%found[1].length];
+  return round%2===0 ? ville : `région de ${ville}`;
 }
-// Requêtes Google Dork rotatives pour trouver des résultats moins connus
+// Requêtes Google Dork rotatives pour les sources classiques (brick-and-mortar)
 const DORK_VARIANTS=[
   (n,z)=>`inurl:contact "${n}" "${z}" téléphone`,
   (n,z)=>`"${n}" "${z}" "nous contacter" téléphone -site:pagesjaunes.fr -site:mappy.com`,
@@ -2210,17 +2234,33 @@ const DORK_VARIANTS=[
   (n,z)=>`site:pappers.fr "${n}" "${z}"`,
   (n,z)=>`"${n}" "${z}" "devis gratuit" OR "contactez-nous" téléphone`,
 ];
+// Requêtes Google Dork spécifiques aux freelances
+const FREELANCE_DORK_VARIANTS=[
+  (n,z)=>`site:malt.fr "${n}" "${z}"`,
+  (n,z)=>`site:linkedin.com/in/ "${n}" "${z}" freelance`,
+  (n,z)=>`"${n}" freelance "${z}" email OR "me contacter" site:.fr`,
+  (n,z)=>`site:codeur.com "${n}" "${z}"`,
+  (n,z)=>`"portfolio" "${n}" "${z}" email contact`,
+  (n,z)=>`site:comeup.com "${n}" "${z}"`,
+  (n,z)=>`"${n}" freelance "${z}" tarif devis -pagesjaunes -mappy`,
+  (n,z)=>`"${n}" "${z}" "disponible" OR "mission" OR "prestation" email`,
+  (n,z)=>`site:github.io "${n}" "${z}" email`,
+  (n,z)=>`site:behance.net "${n}" "${z}" contact`,
+];
 
 const SOURCE_DEFS={
-  pj:{label:'Pages Jaunes',badge:'pj',buildPrompt:(niche,ville,n,excl)=>`Tu es un extracteur de données B2B expert. Utilise web_search PLUSIEURS FOIS.\nTÂCHE: Trouver ${n} "${niche}" à ${ville} via pagesjaunes.fr\nPOUR CHAQUE résultat trouvé : fais une recherche supplémentaire "{nom} ${ville} téléphone" pour trouver son numéro direct.\nPRIORITÉ ABSOLUE : le numéro de téléphone. Sans numéro, ne pas inclure le contact sauf si c'est vraiment impossible à trouver.\n${excl}\nJSON UNIQUEMENT:\n{"enterprises":[{"nom":"...","telephone":"06XXXXXXXX","email":null,"adresse":"...","ville":"${ville}","website":null,"has_website":false,"dirigeant":null,"siret":null,"forme_juridique":null,"date_creation":null,"nb_employes":null,"linkedin_url":null,"facebook_url":null,"instagram_url":null,"source":"Pages Jaunes"}]}`},
-  gm:{label:'Google Maps',badge:'gm',buildPrompt:(niche,ville,n,excl)=>`Tu es un extracteur B2B expert. Utilise web_search PLUSIEURS FOIS.\nTÂCHE: Trouver ${n} "${niche}" à ${ville} via Google Maps.\nPOUR CHAQUE fiche trouvée : cherche aussi "{nom} ${ville} téléphone site web" pour compléter les infos manquantes.\nPRIORITÉ ABSOLUE : numéro de téléphone direct (mobile ou fixe). Cherche sur leur fiche Google, leur site, leur Instagram, leur Facebook.\n${excl}\nJSON UNIQUEMENT:\n{"enterprises":[{"nom":"...","telephone":"06XXXXXXXX","email":null,"adresse":"...","ville":"${ville}","website":"https://...","has_website":true,"dirigeant":null,"siret":null,"forme_juridique":null,"date_creation":null,"nb_employes":null,"linkedin_url":null,"facebook_url":null,"instagram_url":null,"source":"Google Maps"}]}`},
-  li:{label:'LinkedIn',badge:'linkedin',buildPrompt:(niche,ville,n,excl)=>`Tu es extracteur B2B expert. Utilise web_search PLUSIEURS FOIS.\nTÂCHE: Trouver ${n} "${niche}" indépendants à ${ville} via LinkedIn.\nPOUR CHAQUE profil : fais une recherche "{prénom nom} coach ${ville} téléphone contact" pour trouver leur numéro sur leur site ou autres réseaux.\nPRIORITÉ ABSOLUE : numéro de téléphone.\n${excl}\nJSON UNIQUEMENT:\n{"enterprises":[{"nom":"...","telephone":"06XXXXXXXX","email":"...","adresse":"${ville}","ville":"${ville}","website":"https://...","has_website":true,"dirigeant":"Prénom Nom","siret":null,"forme_juridique":null,"date_creation":null,"nb_employes":null,"linkedin_url":"https://linkedin.com/in/...","facebook_url":null,"instagram_url":null,"source":"LinkedIn"}]}`},
-  fb:{label:'Facebook',badge:'facebook',buildPrompt:(niche,ville,n,excl)=>`Tu es extracteur B2B expert. Utilise web_search PLUSIEURS FOIS.\nTÂCHE: Trouver ${n} pages Facebook "${niche}" à ${ville}.\nPOUR CHAQUE page : cherche aussi "{nom} téléphone contact ${ville}" — regarde la section "À propos" de leur page, leur site lié, leur Instagram.\nPRIORITÉ ABSOLUE : numéro de téléphone mobile direct.\n${excl}\nJSON UNIQUEMENT:\n{"enterprises":[{"nom":"...","telephone":"06XXXXXXXX","email":"...","adresse":"...","ville":"${ville}","website":"https://...","has_website":true,"dirigeant":"Prénom Nom","siret":null,"forme_juridique":null,"date_creation":null,"nb_employes":null,"linkedin_url":null,"facebook_url":"https://facebook.com/...","instagram_url":null,"source":"Facebook"}]}`},
-  ig:{label:'Instagram',badge:'insta',buildPrompt:(niche,ville,n,excl)=>`Tu es extracteur B2B expert. Utilise web_search PLUSIEURS FOIS.\nTÂCHE: Trouver ${n} comptes Instagram "${niche}" à ${ville}.\nPOUR CHAQUE compte : cherche "{nom} ${ville} téléphone" + visite leur lien bio pour trouver email et téléphone. Les coachs mettent souvent leur numéro dans la bio Instagram ou sur leur site Linktree/site perso.\nPRIORITÉ ABSOLUE : numéro de téléphone.\n${excl}\nJSON UNIQUEMENT:\n{"enterprises":[{"nom":"...","telephone":"06XXXXXXXX","email":"...","adresse":"${ville}","ville":"${ville}","website":"https://...","has_website":true,"dirigeant":"Prénom Nom","siret":null,"forme_juridique":null,"date_creation":null,"nb_employes":null,"linkedin_url":null,"facebook_url":null,"instagram_url":"https://instagram.com/...","source":"Instagram"}]}`},
-  ta:{label:'TripAdvisor/Yelp',badge:'ta',buildPrompt:(niche,ville,n,excl)=>`Tu es extracteur B2B expert. Utilise web_search.\nTÂCHE: Trouver ${n} "${niche}" à ${ville} via TripAdvisor/Yelp.\nPOUR CHAQUE résultat : cherche leur téléphone direct.\n${excl}\nJSON UNIQUEMENT:\n{"enterprises":[{"nom":"...","telephone":"...","email":null,"adresse":"...","ville":"${ville}","website":"https://...","has_website":true,"dirigeant":null,"siret":null,"forme_juridique":null,"date_creation":null,"nb_employes":null,"linkedin_url":null,"facebook_url":null,"instagram_url":null,"source":"TripAdvisor"}]}`},
-  sc:{label:'Pappers/Societe',badge:'societe',buildPrompt:(niche,ville,n,excl)=>`Tu es extracteur B2B expert. Utilise web_search PLUSIEURS FOIS.\nTÂCHE: Trouver ${n} entreprises "${niche}" à ${ville} dans registres légaux (Pappers, Societe.com, Infogreffe).\nPOUR CHAQUE entreprise : cherche "{nom entreprise} ${ville} téléphone contact" pour trouver le numéro du dirigeant.\nPRIORITÉ ABSOLUE : téléphone direct du dirigeant.\n${excl}\nJSON UNIQUEMENT:\n{"enterprises":[{"nom":"...","telephone":"06XXXXXXXX","email":null,"adresse":"...","ville":"${ville}","website":null,"has_website":false,"dirigeant":"Prénom Nom","siret":"12345678901234","forme_juridique":"SARL","date_creation":"2019","nb_employes":"1","linkedin_url":null,"facebook_url":null,"instagram_url":null,"source":"Pappers/Societe.com"}]}`},
-  an:{label:'Annuaires alternatifs',badge:'annuaire',buildPrompt:(niche,ville,n,excl)=>`Tu es extracteur B2B expert. Utilise web_search PLUSIEURS FOIS.\nTÂCHE: Trouver ${n} "${niche}" à ${ville} via Mappy, Kompass, Alignable, ou tout autre annuaire professionnel.\nPOUR CHAQUE résultat : cherche leur numéro de téléphone en faisant une recherche complémentaire.\nPRIORITÉ ABSOLUE : numéro de téléphone.\n${excl}\nJSON UNIQUEMENT:\n{"enterprises":[{"nom":"...","telephone":"06XXXXXXXX","email":null,"adresse":"...","ville":"${ville}","website":null,"has_website":false,"dirigeant":null,"siret":null,"forme_juridique":null,"date_creation":null,"nb_employes":null,"linkedin_url":null,"facebook_url":null,"instagram_url":null,"source":"Annuaires alternatifs"}]}`},
-  sw:{label:'Sites officiels',badge:'gm',buildPrompt:(niche,ville,n,excl)=>`Tu es extracteur B2B expert. Utilise web_search PLUSIEURS FOIS.\nTÂCHE: Trouver ${n} "${niche}" indépendants à ${ville} qui ont leur propre site web.\nPOUR CHAQUE site trouvé : extrais le numéro de téléphone depuis la page Contact, la page d'accueil, le footer, ou les mentions légales. Cherche aussi sur leur Google My Business.\nPRIORITÉ ABSOLUE : numéro de téléphone direct — c'est la donnée la plus importante.\n${excl}\nJSON UNIQUEMENT:\n{"enterprises":[{"nom":"...","telephone":"06XXXXXXXX","email":"...","adresse":"...","ville":"${ville}","website":"https://...","has_website":true,"dirigeant":"Prénom Nom","siret":null,"forme_juridique":null,"date_creation":null,"nb_employes":null,"linkedin_url":null,"facebook_url":null,"instagram_url":null,"source":"Site officiel"}]}`}
+  pj:{label:'Pages Jaunes',badge:'pj',buildPrompt:(niche,ville,n,excl)=>`Tu es un extracteur de données B2B expert. Utilise web_search PLUSIEURS FOIS.\nTÂCHE: Trouver ${n} "${niche}" à ${ville} via pagesjaunes.fr\nPOUR CHAQUE résultat trouvé :\na. Cherche "{nom} ${ville} téléphone" pour trouver son numéro direct\nb. Si ils ont un site web : visite /contact et /mentions-legales (obligatoires en France, contiennent TOUJOURS l'email)\nPRIORITÉ ABSOLUE : le numéro de téléphone.\nRÈGLE : Ne jamais masquer ou remplacer des caractères par 'x' dans les numéros ou emails — données complètes uniquement.\n${excl}\nJSON UNIQUEMENT:\n{"enterprises":[{"nom":"...","telephone":"06XXXXXXXX","email":null,"adresse":"...","ville":"${ville}","website":null,"has_website":false,"dirigeant":null,"siret":null,"forme_juridique":null,"date_creation":null,"nb_employes":null,"linkedin_url":null,"facebook_url":null,"instagram_url":null,"source":"Pages Jaunes"}]}`},
+  gm:{label:'Google Maps',badge:'gm',buildPrompt:(niche,ville,n,excl)=>`Tu es un extracteur B2B expert. Utilise web_search PLUSIEURS FOIS.\nTÂCHE: Trouver ${n} "${niche}" à ${ville} via Google Maps.\nPOUR CHAQUE fiche trouvée :\na. Cherche "{nom} ${ville} téléphone" pour trouver le numéro direct\nb. Si ils ont un site : visite /contact et /mentions-legales (obligatoires en France, contiennent TOUJOURS l'email)\nPRIORITÉ ABSOLUE : numéro de téléphone direct (mobile ou fixe).\nRÈGLE : Ne jamais masquer ou remplacer des caractères par 'x' dans les numéros ou emails — données complètes uniquement.\n${excl}\nJSON UNIQUEMENT:\n{"enterprises":[{"nom":"...","telephone":"06XXXXXXXX","email":null,"adresse":"...","ville":"${ville}","website":"https://...","has_website":true,"dirigeant":null,"siret":null,"forme_juridique":null,"date_creation":null,"nb_employes":null,"linkedin_url":null,"facebook_url":null,"instagram_url":null,"source":"Google Maps"}]}`},
+  li:{label:'LinkedIn',badge:'linkedin',buildPrompt:(niche,ville,n,excl)=>`Tu es extracteur B2B expert. Utilise web_search PLUSIEURS FOIS.\nTÂCHE: Trouver ${n} "${niche}" à ${ville} via LinkedIn.\nRECHERCHES À LANCER:\n1. site:linkedin.com/in/ "${niche}" "${ville}"\n2. site:linkedin.com/in/ "${niche}" "${ville}" freelance\nPOUR CHAQUE profil trouvé :\na. Cherche "{prénom nom} ${ville} email" pour trouver leur contact direct\nb. Visite leur site web lié, cherche /contact et /mentions-legales (obligatoires en France, contiennent TOUJOURS l'email)\nPRIORITÉ: email > site perso > téléphone.\nRÈGLE : Ne jamais masquer ou remplacer des caractères par 'x' dans les numéros ou emails — données complètes uniquement.\n${excl}\nJSON UNIQUEMENT:\n{"enterprises":[{"nom":"...","telephone":null,"email":"...","adresse":"${ville}","ville":"${ville}","website":"https://...","has_website":true,"dirigeant":"Prénom Nom","siret":null,"forme_juridique":null,"date_creation":null,"nb_employes":null,"linkedin_url":"https://linkedin.com/in/...","facebook_url":null,"instagram_url":null,"source":"LinkedIn"}]}`},
+  fb:{label:'Facebook',badge:'facebook',buildPrompt:(niche,ville,n,excl)=>`Tu es extracteur B2B expert. Utilise web_search PLUSIEURS FOIS.\nTÂCHE: Trouver ${n} pages Facebook "${niche}" à ${ville}.\nPOUR CHAQUE page :\na. Cherche "{nom} téléphone contact ${ville}" — regarde la section "À propos", leur site lié, leur Instagram\nb. Si site web lié : visite /contact et /mentions-legales (obligatoires en France, contiennent TOUJOURS l'email)\nPRIORITÉ ABSOLUE : numéro de téléphone mobile direct.\nRÈGLE : Ne jamais masquer ou remplacer des caractères par 'x' dans les numéros ou emails — données complètes uniquement.\n${excl}\nJSON UNIQUEMENT:\n{"enterprises":[{"nom":"...","telephone":"06XXXXXXXX","email":"...","adresse":"...","ville":"${ville}","website":"https://...","has_website":true,"dirigeant":"Prénom Nom","siret":null,"forme_juridique":null,"date_creation":null,"nb_employes":null,"linkedin_url":null,"facebook_url":"https://facebook.com/...","instagram_url":null,"source":"Facebook"}]}`},
+  ig:{label:'Instagram',badge:'insta',buildPrompt:(niche,ville,n,excl)=>`Tu es extracteur B2B expert. Utilise web_search PLUSIEURS FOIS.\nTÂCHE: Trouver ${n} comptes Instagram "${niche}" à ${ville}.\nPOUR CHAQUE compte :\na. Cherche "{nom} ${ville} contact" pour trouver leur email direct\nb. Visite leur lien bio (Linktree, site perso) pour trouver email et téléphone\nc. Si site perso trouvé : visite /contact et /mentions-legales (obligatoires en France, contiennent TOUJOURS l'email)\nPRIORITÉ: email > téléphone > site perso.\nRÈGLE : Ne jamais masquer ou remplacer des caractères par 'x' dans les numéros ou emails — données complètes uniquement.\n${excl}\nJSON UNIQUEMENT:\n{"enterprises":[{"nom":"...","telephone":null,"email":"...","adresse":"${ville}","ville":"${ville}","website":"https://...","has_website":true,"dirigeant":"Prénom Nom","siret":null,"forme_juridique":null,"date_creation":null,"nb_employes":null,"linkedin_url":null,"facebook_url":null,"instagram_url":"https://instagram.com/...","source":"Instagram"}]}`},
+  ta:{label:'TripAdvisor/Yelp',badge:'ta',buildPrompt:(niche,ville,n,excl)=>`Tu es extracteur B2B expert. Utilise web_search.\nTÂCHE: Trouver ${n} "${niche}" à ${ville} via TripAdvisor/Yelp.\nPOUR CHAQUE résultat : cherche leur téléphone direct.\nRÈGLE : Ne jamais masquer ou remplacer des caractères par 'x' dans les numéros ou emails — données complètes uniquement.\n${excl}\nJSON UNIQUEMENT:\n{"enterprises":[{"nom":"...","telephone":"...","email":null,"adresse":"...","ville":"${ville}","website":"https://...","has_website":true,"dirigeant":null,"siret":null,"forme_juridique":null,"date_creation":null,"nb_employes":null,"linkedin_url":null,"facebook_url":null,"instagram_url":null,"source":"TripAdvisor"}]}`},
+  sc:{label:'Pappers/Societe',badge:'societe',buildPrompt:(niche,ville,n,excl)=>`Tu es extracteur B2B expert. Utilise web_search PLUSIEURS FOIS.\nTÂCHE: Trouver ${n} entreprises "${niche}" à ${ville} dans registres légaux (Pappers, Societe.com, Infogreffe).\nPOUR CHAQUE entreprise :\na. Cherche "{nom entreprise} ${ville} téléphone contact" pour le numéro du dirigeant\nb. Si site web trouvé : visite /contact et /mentions-legales (obligatoires en France, contiennent TOUJOURS l'email)\nPRIORITÉ ABSOLUE : téléphone direct du dirigeant.\nRÈGLE : Ne jamais masquer ou remplacer des caractères par 'x' dans les numéros ou emails — données complètes uniquement.\n${excl}\nJSON UNIQUEMENT:\n{"enterprises":[{"nom":"...","telephone":"06XXXXXXXX","email":null,"adresse":"...","ville":"${ville}","website":null,"has_website":false,"dirigeant":"Prénom Nom","siret":"12345678901234","forme_juridique":"SARL","date_creation":"2019","nb_employes":"1","linkedin_url":null,"facebook_url":null,"instagram_url":null,"source":"Pappers/Societe.com"}]}`},
+  an:{label:'Annuaires alternatifs',badge:'annuaire',buildPrompt:(niche,ville,n,excl)=>`Tu es extracteur B2B expert. Utilise web_search PLUSIEURS FOIS.\nTÂCHE: Trouver ${n} "${niche}" à ${ville} via Mappy, Kompass, Alignable, ou tout autre annuaire professionnel.\nPOUR CHAQUE résultat :\na. Cherche leur numéro de téléphone en faisant une recherche complémentaire\nb. Si site web trouvé : visite /contact et /mentions-legales (obligatoires en France, contiennent TOUJOURS l'email)\nPRIORITÉ ABSOLUE : numéro de téléphone.\nRÈGLE : Ne jamais masquer ou remplacer des caractères par 'x' dans les numéros ou emails — données complètes uniquement.\n${excl}\nJSON UNIQUEMENT:\n{"enterprises":[{"nom":"...","telephone":"06XXXXXXXX","email":null,"adresse":"...","ville":"${ville}","website":null,"has_website":false,"dirigeant":null,"siret":null,"forme_juridique":null,"date_creation":null,"nb_employes":null,"linkedin_url":null,"facebook_url":null,"instagram_url":null,"source":"Annuaires alternatifs"}]}`},
+  sw:{label:'Sites officiels',badge:'gm',buildPrompt:(niche,ville,n,excl)=>{const isDigital=/web|développeur|graphiste|design|digital|seo|marketing|community|rédact|copywrite|consultant|freelance|vidéo|photo/i.test(niche);const searches=isDigital?`ÉTAPE 1 — Lance ces recherches :\n1. "${niche} ${ville}" portfolio\n2. "${niche} freelance ${ville}" site perso\n3. "${niche} ${ville}" email contact\n4. "${niche} ${ville}" devis tarif prestations`:`ÉTAPE 1 — Lance ces recherches :\n1. "${niche}" "${ville}" site:.fr\n2. "${niche}" "${ville}" contact email\n3. "${niche}" "${ville}" téléphone`;return `Tu es extracteur B2B expert. Utilise web_search PLUSIEURS FOIS.\nTÂCHE: Trouver ${n} "${niche}" à ${ville} avec leurs coordonnées.\n${searches}\nÉTAPE 2 — Pour CHAQUE site/personne trouvé :\na. Visite leur site web\nb. Cherche email+téléphone dans : footer, page /contact, page /mentions-legales\nc. Les mentions légales (obligatoires en France) contiennent TOUJOURS l'email et souvent le téléphone\nRÈGLE : Ne jamais masquer ou remplacer des caractères par 'x' dans les numéros ou emails — données complètes uniquement.\n${excl}\nJSON UNIQUEMENT:\n{"enterprises":[{"nom":"...","telephone":"06XXXXXXXX","email":"...","adresse":"...","ville":"${ville}","website":"https://...","has_website":true,"dirigeant":"Prénom Nom","siret":null,"forme_juridique":null,"date_creation":null,"nb_employes":null,"linkedin_url":null,"facebook_url":null,"instagram_url":null,"source":"Site officiel"}]}`;}},
+  ml:{label:'Malt / Freelances',badge:'malt',buildPrompt:(niche,ville,n,excl)=>{const core=niche.replace(/\s*freelance\s*/gi,'').trim();return `Tu es un extracteur de données B2B expert. Utilise web_search PLUSIEURS FOIS.\nTÂCHE: Trouver ${n} freelances "${core}" basés à ${ville}.\n\nÉTAPE 1 — Trouver les profils (lance ces recherches dans cet ordre) :\n1. site:malt.fr "${core}" "${ville}"\n2. site:malt.fr "${core}" "${ville}" (synonymes : dev web→"frontend","full-stack","intégrateur" / graphiste→"designer","UI","illustrateur" / vidéo→"vidéaste","motion designer")\n3. site:codeur.com "${core}" "${ville}"\n4. site:comeup.com "${core}" "${ville}"\n5. "${core} freelance ${ville}" portfolio\n\nÉTAPE 2 — Pour CHAQUE profil/personne trouvé :\na. Visite leur URL de profil et note le lien vers leur site perso\nb. Visite leur site perso et cherche email+téléphone dans : footer, page /contact, page /mentions-legales\nc. Les mentions légales (obligatoires en France par la loi) contiennent TOUJOURS l'email du propriétaire du site\n\nPRIORITÉ : email direct > téléphone > lien site perso.\nRÈGLE : Ne jamais masquer ou remplacer des caractères par 'x' dans les numéros ou emails — données complètes uniquement.\n${excl}\nJSON UNIQUEMENT:\n{"enterprises":[{"nom":"Prénom NOM","telephone":"06XXXXXXXX","email":"...","adresse":"${ville}","ville":"${ville}","website":"https://...","has_website":true,"dirigeant":"Prénom NOM","siret":null,"forme_juridique":null,"date_creation":null,"nb_employes":null,"linkedin_url":null,"facebook_url":null,"instagram_url":null,"source":"Malt"}]}`;}},
+  pt:{label:'Portfolios & sites',badge:'portfolio',buildPrompt:(niche,ville,n,excl)=>`Tu es un extracteur de données B2B expert. Utilise web_search PLUSIEURS FOIS.\nTÂCHE: Trouver ${n} freelances "${niche}" à ${ville} via leurs sites personnels et portfolios.\n\nRECHERCHES À LANCER:\n1. "${niche} freelance ${ville}" portfolio\n2. "${niche} ${ville}" portfolio site perso\n3. "${niche} freelance ${ville}" devis tarif\n4. "${niche} ${ville}" contact email\n\nPour chaque site trouvé :\na. Visite-le et cherche email+téléphone dans le footer et la page /contact\nb. Visite /mentions-legales (obligatoires en France, contiennent TOUJOURS l'email et souvent le téléphone)\nPRIORITÉ: email > téléphone > lien site.\nRÈGLE : Ne jamais masquer ou remplacer des caractères par 'x' dans les numéros ou emails — données complètes uniquement.\n${excl}\nJSON UNIQUEMENT:\n{"enterprises":[{"nom":"...","telephone":"...","email":"...","adresse":"${ville}","ville":"${ville}","website":"https://...","has_website":true,"dirigeant":"Prénom Nom","siret":null,"forme_juridique":null,"date_creation":null,"nb_employes":null,"linkedin_url":null,"facebook_url":null,"instagram_url":null,"source":"Portfolio"}]}`},
+  gh:{label:'GitHub / Behance',badge:'github',buildPrompt:(niche,ville,n,excl)=>{const core=niche.replace(/\s*freelance\s*/gi,'').trim();return `Tu es un extracteur de données B2B expert. Utilise web_search PLUSIEURS FOIS.\nTÂCHE: Trouver ${n} freelances "${core}" à ${ville} via leurs pages perso et portfolios en ligne.\n\nÉTAPE 1 — Trouver les portfolios (lance ces recherches) :\n1. site:github.io "${core}" "${ville}"\n2. site:behance.net "${core}" "${ville}"\n3. site:dribbble.com "${core}" "${ville}"\n4. "${core} freelance ${ville}" portfolio site perso\n\nÉTAPE 2 — Pour CHAQUE profil/page trouvé :\na. Visite la page directement\nb. Cherche email+téléphone dans : le contenu visible, le footer, le lien vers site perso\nc. Si site perso trouvé : visite /contact et /mentions-legales\nd. Les mentions légales françaises (obligatoires par la loi) contiennent TOUJOURS l'email et souvent le téléphone\n\nPRIORITÉ : email > téléphone > lien site.\nRÈGLE : Ne jamais masquer ou remplacer des caractères par 'x' dans les numéros ou emails — données complètes uniquement.\n${excl}\nJSON UNIQUEMENT:\n{"enterprises":[{"nom":"...","telephone":"06XXXXXXXX","email":"...","adresse":"${ville}","ville":"${ville}","website":"https://...","has_website":true,"dirigeant":"Prénom Nom","siret":null,"forme_juridique":null,"date_creation":null,"nb_employes":null,"linkedin_url":null,"facebook_url":null,"instagram_url":null,"source":"GitHub/Behance"}]}`;}},
 };
 
 
@@ -2230,8 +2270,14 @@ async function callSourceAPI(srcKey,niche,ville,n,allExistingBiz,round=0){
   const excl=allExistingBiz.length>0?`EXCLURE ABSOLUMENT ces entreprises déjà connues:\n${allExistingBiz.slice(-80).join(' | ')}`:'';
   let prompt=def.buildPrompt(niche,zone,n,excl);
   if(round>0){
-    const dork=DORK_VARIANTS[(round-1)%DORK_VARIANTS.length](niche,zone);
-    prompt=`RELANCE OBLIGATOIRE n°${round} — Zone cible: "${zone}"\nATTENTION: Les tops résultats habituels (première page Google, têtes d'annuaires) ont DÉJÀ ÉTÉ RÉCUPÉRÉS. Tu dois absolument trouver des entreprises DIFFÉRENTES, moins visibles, moins connues.\nSTRATÉGIE IMPOSÉE:\n1. Lance D'ABORD cette recherche Google Dork: "${dork}"\n2. Puis cherche "${niche} ${zone} contact téléphone" avec des formulations variées (synonymes, codes postaux, quartiers)\n3. Explore les pages 2 et 3 des résultats — pas uniquement la première page\n4. Les petites entreprises sans beaucoup d'avis, les nouveaux établissements et ceux peu référencés sont BIENVENUS\n\n`+prompt;
+    const isFreelanceSrc=['ml','pt','li','ig'].includes(srcKey);
+    const dorkList=isFreelanceSrc?FREELANCE_DORK_VARIANTS:DORK_VARIANTS;
+    const dork=dorkList[(round-1)%dorkList.length](niche,zone);
+    if(isFreelanceSrc){
+      prompt=`RELANCE OBLIGATOIRE n°${round} — Zone cible: "${zone}"\nATTENTION: Les profils freelances les plus visibles ont DÉJÀ ÉTÉ RÉCUPÉRÉS. Tu dois trouver des profils DIFFÉRENTS, moins connus.\nSTRATÉGIE IMPOSÉE:\n1. Lance D'ABORD cette recherche: "${dork}"\n2. Cherche aussi "${niche} freelance ${zone}" avec des synonymes différents\n3. Explore des profils avec peu d'avis ou récemment créés\n4. Accepte les contacts sans téléphone si tu as au moins un email ou site web\n\n`+prompt;
+    }else{
+      prompt=`RELANCE OBLIGATOIRE n°${round} — Zone cible: "${zone}"\nATTENTION: Les tops résultats habituels ont DÉJÀ ÉTÉ RÉCUPÉRÉS. Tu dois trouver des entreprises DIFFÉRENTES, moins visibles.\nSTRATÉGIE IMPOSÉE:\n1. Lance D'ABORD cette recherche Google Dork: "${dork}"\n2. Puis cherche "${niche} ${zone} contact téléphone" avec des formulations variées\n3. Explore les pages 2 et 3 des résultats\n4. Les petites entreprises peu référencées sont BIENVENUES\n\n`+prompt;
+    }
   }
   let lastErr;
   for(let attempt=0;attempt<4;attempt++){
@@ -2241,7 +2287,7 @@ async function callSourceAPI(srcKey,niche,ville,n,allExistingBiz,round=0){
       await new Promise(r=>setTimeout(r,wait));
     }
     try{
-      const resp=await fetch(API_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:6000,tools:[{type:'web_search_20250305',name:'web_search'}],messages:[{role:'user',content:prompt}]})});
+      const resp=await fetch(API_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:10000,tools:[{type:'web_search_20250305',name:'web_search'}],messages:[{role:'user',content:prompt}]})});
       if(!resp.ok){
         const err=await resp.json().catch(()=>({}));
         const msg=err.error?.message||`HTTP ${resp.status}`;
@@ -2261,9 +2307,12 @@ for(const e of raw){
         const phone=e.telephone||e.phone||e.tel||null;
         const email=e.email||null;
         if(phone&&/^(0600000000|0000000000|0123456789|06XX|07XX|XXXXXXXX)/.test(phone.replace(/[\s.]/g,'')))continue;
+        if(phone&&/x/i.test(phone.replace(/[\s.+\-()]/g,'')))continue;
         if(email&&/(exemple|example|test@|fake@|coach@email\.com)/.test(email))continue;
+        if(email&&/[0-9a-f]{7,}/i.test(email))continue;
         const website=cleanWebsite(e.website||e.site||e.url||null);
         if(website&&/simulée|simulé|fictif|exemple|example\.com/.test(website))continue;
+        if(!phone&&!email&&!website)continue;
         results.push({biz:nom,phone,email,adresse:e.adresse||e.address||null,ville:e.ville||ville,website,has_website:!!website,dirigeant:e.dirigeant||e.gerant||null,siret:e.siret||null,forme_juridique:e.forme_juridique||null,date_creation:e.date_creation||null,nb_employes:e.nb_employes||null,linkedin_url:e.linkedin_url||null,facebook_url:e.facebook_url||null,instagram_url:e.instagram_url||null,source:e.source||def.label});
       }
       return{results,queries:searchQueries};
@@ -2373,7 +2422,7 @@ Si ça vous parle, je vous propose un échange de 10 minutes cette semaine pour 
 Seriez-vous disponible demain en fin de journée ?
 
 Alexis
-Directeur – Leadsvision
+Directeur – PushProspect
 07 59 53 64 75`;
   } else if(type==='nosite'){
     subjectEl.value='Créez votre site web professionnel — {nom}';
@@ -2531,7 +2580,7 @@ async function openMailtoBlast(){
   if(!subject||!body){showToast('Objet et message requis',false);return;}
   
   const testContact={
-    email:'pro.leadsvision@gmail.com',
+    email:'pro.PushProspect@gmail.com',
     biz:'Restaurant Le Gourmet',
     ville:'Paris',
     dirigeant:null
@@ -2575,7 +2624,7 @@ async function openMailtoOneByOne(){
   if(!subject||!body){showToast('Objet et message requis',false);return;}
   
   const testContact={
-    email:'pro.leadsvision@gmail.com',
+    email:'pro.PushProspect@gmail.com',
     biz:'Restaurant Le Gourmet',
     ville:'Paris',
     dirigeant:null
@@ -2730,7 +2779,7 @@ scanResults.push(fullR);appendResult(fullR,scanResults.length-1);added++;
 
   // ── BOUCLE DE RELANCE jusqu'à atteindre targetBatch ──
   let extraRound=0;
-  const MAX_EXTRA=5;
+  const MAX_EXTRA=8;
   while(scanResults.length<targetBatch&&!scanAborted&&extraRound<MAX_EXTRA){
     extraRound++;
     const stillNeeded=targetBatch-scanResults.length;
@@ -4243,7 +4292,7 @@ function rechargeUpdate(amt){
         </div>
         <div>
           <label class="form-label">Votre titre / poste</label>
-          <input class="form-input" id="sender-title" placeholder="Directeur Commercial" value="Directeur – Leadsvision" oninput="updatePreview()"/>
+          <input class="form-input" id="sender-title" placeholder="Directeur Commercial" value="Directeur – PushProspect" oninput="updatePreview()"/>
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -4253,12 +4302,12 @@ function rechargeUpdate(amt){
         </div>
         <div>
           <label class="form-label">Nom de l'entreprise (header email)</label>
-          <input class="form-input" id="sender-company" placeholder="Mon Agence" value="Leadsvision" oninput="updatePreview()"/>
+          <input class="form-input" id="sender-company" placeholder="Mon Agence" value="PushProspect" oninput="updatePreview()"/>
         </div>
       </div>
       <div style="margin-top:10px">
         <label class="form-label">Tagline (sous le nom dans le header)</label>
-        <input class="form-input" id="sender-tagline" placeholder="Web Design & Développement" value="Web Design & Développement" oninput="updatePreview()"/>
+        <input class="form-input" id="sender-tagline" placeholder="CRM Tout en un" value="CRM Tout en un" oninput="updatePreview()"/>
       </div>
     </div>
 
